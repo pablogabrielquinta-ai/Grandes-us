@@ -242,10 +242,13 @@
     <button class="btn-grande" id="btnFotoIni" type="button">📷 &nbsp;Sacar foto</button>
     <button class="btn-grande video" id="btnVideoIni" type="button">🎥 &nbsp;Grabar video</button>
     <button class="btn-galeria" id="btnGaleria" type="button">🖼️ &nbsp;Elegir foto de la galería</button>
+    <button class="btn-galeria" id="btnVideoGal" type="button">🎞️ &nbsp;Elegir video de la galería</button>
     <p class="nota">El video se graba adentro de la app (máx. 60 segundos) y se manda
     junto con la foto sellada. Los datos van estampados en la foto.</p>
   </div>
   <input type="file" id="inputFoto" accept="image/*">
+  <input type="file" id="inputVideo" accept="video/*" capture="camcorder" style="display:none">
+  <input type="file" id="inputVideoGal" accept="video/*" style="display:none">
 
   <!-- camara / video / escaner -->
   <div id="camara">
@@ -282,6 +285,7 @@
     <div class="fila-agregar">
       <button type="button" id="btnMasFoto">📷 ＋ Foto</button>
       <button type="button" id="btnMasVideo">🎥 ＋ Video</button>
+      <button type="button" id="btnMasVideoGal">🎞️ Galería</button>
     </div>
 
     <form id="datos" onsubmit="return false;">
@@ -358,6 +362,10 @@
   var btnFotoIni  = document.getElementById('btnFotoIni');
   var btnVideoIni = document.getElementById('btnVideoIni');
   var btnGaleria  = document.getElementById('btnGaleria');
+  var btnVideoGal = document.getElementById('btnVideoGal');
+  var inputVideo  = document.getElementById('inputVideo');
+  var inputVideoGal = document.getElementById('inputVideoGal');
+  var btnMasVideoGal = document.getElementById('btnMasVideoGal');
   var btnMasFoto  = document.getElementById('btnMasFoto');
   var btnMasVideo = document.getElementById('btnMasVideo');
   var btnQuitarFoto  = document.getElementById('btnQuitarFoto');
@@ -395,6 +403,25 @@
     try{ localStorage.setItem(CLAVE_MEM, JSON.stringify({ zona: inpZona.value })); }catch(e){}
   }
 
+  var CLAVE_CAMPOS = 'dpec_gu_campos';
+  function guardarCampos(){
+    try{
+      localStorage.setItem(CLAVE_CAMPOS, JSON.stringify({
+        med: inpMedidor.value, cli: inpCliente.value,
+        desc: txtDesc.value, t: Date.now()
+      }));
+    }catch(e){}
+  }
+  function borrarCampos(){ try{ localStorage.removeItem(CLAVE_CAMPOS); }catch(e){} }
+  try{
+    var c = JSON.parse(localStorage.getItem(CLAVE_CAMPOS) || 'null');
+    if(c && (Date.now() - (c.t||0)) < 12*60*60*1000){
+      if(c.med)  inpMedidor.value = c.med;
+      if(c.cli)  inpCliente.value = c.cli;
+      if(c.desc) txtDesc.value = c.desc;
+    }
+  }catch(e){}
+
   // ================= pantallas =================
   function mostrarPantalla(cual){
     inicio.style.display = (cual === 'inicio') ? 'block' : 'none';
@@ -409,15 +436,58 @@
     bloqueVideo.classList.toggle('visible', !!videoBlob);
     btnMasFoto.style.display = fotoOff ? 'none' : '';
     btnMasVideo.style.display = videoBlob ? 'none' : '';
+    btnMasVideoGal.style.display = videoBlob ? 'none' : '';
     mostrarPantalla('edicion');
   }
 
   // ================= camara =================
   btnFotoIni.addEventListener('click', function(){ abrirCamara('foto'); });
-  btnVideoIni.addEventListener('click', function(){ abrirCamara('video'); });
+  btnVideoIni.addEventListener('click', pedirVideo);
   btnMasFoto.addEventListener('click', function(){ abrirCamara('foto'); });
-  btnMasVideo.addEventListener('click', function(){ abrirCamara('video'); });
+  btnMasVideo.addEventListener('click', pedirVideo);
   btnGaleria.addEventListener('click', function(){ inputFoto.click(); });
+  btnVideoGal.addEventListener('click', function(){ inputVideoGal.click(); });
+  btnMasVideoGal.addEventListener('click', function(){ inputVideoGal.click(); });
+
+  function pedirVideo(){
+    // Si el navegador puede grabar MP4 (el formato que WhatsApp reproduce
+    // directo), grabamos adentro de la app. Si solo sabe WebM, usamos la
+    // cámara nativa del teléfono, que graba MP4 siempre.
+    var mime = mimeVideo();
+    if(mime.indexOf('mp4') !== -1){
+      abrirCamara('video');
+    } else {
+      guardarCampos();
+      inputVideo.click();
+    }
+  }
+
+  function cargarVideoArchivo(file){
+    if(!file) return;
+    videoBlob = file;
+    var nom = (file.name || '').toLowerCase();
+    if(file.type.indexOf('mp4') !== -1 || nom.indexOf('.mp4') !== -1) videoExt = 'mp4';
+    else if(file.type.indexOf('3gp') !== -1 || nom.indexOf('.3gp') !== -1) videoExt = '3gp';
+    else if(file.type.indexOf('webm') !== -1 || nom.indexOf('.webm') !== -1) videoExt = 'webm';
+    else videoExt = 'mp4';
+    if(videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = URL.createObjectURL(videoBlob);
+    vistaVideo.src = videoURL;
+    if(!fechaNov) fechaNov = new Date();
+    if(chkGps.checked) pedirGps();
+    var mb = Math.round(file.size / 1048576);
+    if(mb > 60) mostrarAviso('Ojo: el video pesa ' + mb + ' MB — puede tardar en mandarse por WhatsApp. Conviene grabar más corto.');
+    render();
+    irEdicion();
+  }
+  inputVideo.addEventListener('change', function(){
+    cargarVideoArchivo(inputVideo.files && inputVideo.files[0]);
+    inputVideo.value = '';
+  });
+  inputVideoGal.addEventListener('change', function(){
+    cargarVideoArchivo(inputVideoGal.files && inputVideoGal.files[0]);
+    inputVideoGal.value = '';
+  });
 
   function abrirCamara(modo){
     ocultarAviso();
@@ -712,7 +782,7 @@
 
   // ================= sello =================
   [inpZona, inpMedidor, inpCliente, txtDesc].forEach(function(el){
-    el.addEventListener('input', function(){ guardarMem(); pedirRender(); });
+    el.addEventListener('input', function(){ guardarMem(); guardarCampos(); pedirRender(); });
   });
   function pedirRender(){
     clearTimeout(timerRender);
@@ -832,6 +902,7 @@
 
       if(navigator.canShare && navigator.canShare({ files: files })){
         navigator.share({ files: files, text: texto })
+          .then(function(){ borrarCampos(); })
           .catch(function(err){
             if(err && err.name !== 'AbortError') descargarTodo(files);
           });
@@ -875,6 +946,7 @@
     inpMedidor.value = ''; inpCliente.value = '';
     txtDesc.value = '';
     fechaNov = null;
+    borrarCampos();
     ocultarAviso();
     mostrarPantalla('inicio');
   });
