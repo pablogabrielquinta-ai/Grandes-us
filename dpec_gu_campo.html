@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#161210">
+<title>DPEC · GU Campo</title>
+<style>
+  :root{
+    --bg:#161210;
+    --panel:#201A16;
+    --panel2:#2A221C;
+    --line:#3E332A;
+    --text:#F0EAE4;
+    --muted:#A2917F;
+    --accent:#FF9F43;
+    --accent-dark:#2A1600;
+    --red:#FF5252;
+    --green:#3DDC84;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100%;}
+  body{padding:0 0 90px 0;}
+
+  header{
+    padding:14px 16px 12px;
+    display:flex;align-items:center;gap:10px;
+    border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:10;
+  }
+  .logo{
+    width:38px;height:38px;border-radius:9px;
+    background:var(--accent);color:var(--accent-dark);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:15px;flex-shrink:0;
+  }
+  header h1{font-size:16px;font-weight:700;}
+  header .sub{font-size:11px;color:var(--muted);margin-top:1px;}
+
+  main{padding:14px 14px 0;max-width:520px;margin:0 auto;}
+
+  /* ---- inicio ---- */
+  #inicio .btn-grande{
+    width:100%;
+    border:none;border-radius:14px;
+    background:var(--accent);color:var(--accent-dark);
+    font-size:17px;font-weight:800;font-family:inherit;
+    padding:20px;cursor:pointer;
+  }
+  #inicio .btn-grande.video{
+    background:var(--panel2);color:var(--text);
+    border:1px solid var(--line);margin-top:10px;
+  }
+  #inicio .btn-galeria{
+    margin-top:10px;width:100%;
+    border:1px solid var(--line);border-radius:14px;
+    background:var(--panel);color:var(--text);
+    font-size:14px;font-weight:600;font-family:inherit;
+    padding:14px;cursor:pointer;
+  }
+  #inicio .nota{margin-top:14px;font-size:12px;color:var(--muted);line-height:1.5;text-align:center;}
+
+  /* ---- camara ---- */
+  #camara{display:none;}
+  #camara.visible{display:block;}
+  .video-frame{
+    border-radius:14px;overflow:hidden;
+    border:1px solid var(--line);
+    background:#000;line-height:0;position:relative;
+  }
+  #video{width:100%;height:auto;display:block;}
+  .scan-hint{
+    position:absolute;left:0;right:0;top:0;
+    padding:10px;background:rgba(0,0,0,0.6);
+    color:var(--accent);font-size:13px;font-weight:700;
+    text-align:center;display:none;line-height:1.3;
+  }
+  .rec-info{
+    position:absolute;left:0;right:0;top:0;
+    padding:10px;background:rgba(0,0,0,0.6);
+    color:#fff;font-size:14px;font-weight:800;
+    text-align:center;display:none;
+    font-family:ui-monospace,Menlo,monospace;
+  }
+  .rec-info .punto{
+    display:inline-block;width:10px;height:10px;border-radius:50%;
+    background:var(--red);margin-right:8px;
+    animation:parp 1s infinite;
+  }
+  @keyframes parp{0%,100%{opacity:1;}50%{opacity:0.2;}}
+  .btn-linterna{
+    position:absolute;top:52px;right:10px;
+    width:46px;height:46px;border-radius:50%;
+    background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.3);
+    font-size:21px;align-items:center;justify-content:center;
+    cursor:pointer;display:none;
+  }
+  .btn-linterna.activa{background:var(--accent);border-color:var(--accent);}
+  .zoom-ctl{
+    position:absolute;left:12px;right:12px;bottom:10px;
+    display:none;align-items:center;gap:10px;
+    background:rgba(0,0,0,0.45);border-radius:20px;padding:6px 14px;
+  }
+  .zoom-ctl span{color:#fff;font-weight:800;font-size:16px;line-height:1;}
+  .zoom-ctl input{flex:1;accent-color:var(--accent);height:24px;margin:0;}
+  .foco-ring{
+    position:absolute;width:70px;height:70px;
+    border:2px solid var(--accent);border-radius:50%;
+    pointer-events:none;opacity:0;
+  }
+  .foco-ring.anim{animation:foco 0.8s ease-out;}
+  @keyframes foco{
+    0%{opacity:1;transform:scale(1.4);}
+    60%{opacity:1;transform:scale(1);}
+    100%{opacity:0;transform:scale(1);}
+  }
+  .barra-disparo{
+    display:flex;align-items:center;justify-content:center;
+    gap:26px;padding:16px 0 4px;
+  }
+  .btn-disparo{
+    width:74px;height:74px;border-radius:50%;
+    background:var(--accent);
+    border:5px solid #fff;
+    cursor:pointer;flex-shrink:0;
+  }
+  .btn-disparo.grabar{background:var(--red);}
+  .btn-disparo.grabando{background:var(--red);border-radius:16px;transform:scale(0.8);}
+  .btn-disparo:active{transform:scale(0.93);}
+  .btn-cerrar-cam{
+    background:var(--panel2);border:1px solid var(--line);
+    color:var(--text);border-radius:12px;
+    font-size:13px;font-weight:600;font-family:inherit;
+    padding:12px 16px;cursor:pointer;
+  }
+
+  /* ---- edicion ---- */
+  #edicion{display:none;}
+  #edicion.visible{display:block;}
+  .canvas-frame{
+    border-radius:14px;overflow:hidden;
+    border:1px solid var(--line);
+    background:#000;line-height:0;position:relative;
+  }
+  #canvas{width:100%;height:auto;display:block;}
+  #vistaVideo{width:100%;display:block;border-radius:14px;border:1px solid var(--line);background:#000;}
+  .quitar-media{
+    position:absolute;top:8px;right:8px;
+    width:38px;height:38px;border-radius:50%;
+    background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.35);
+    color:#fff;font-size:16px;cursor:pointer;z-index:2;
+  }
+  .bloque-media{position:relative;margin-top:10px;display:none;}
+  .bloque-media.visible{display:block;}
+  .fila-agregar{display:flex;gap:8px;margin-top:10px;}
+  .fila-agregar button{
+    flex:1;
+    border:1px solid var(--line);border-radius:12px;
+    background:var(--panel);color:var(--text);
+    font-size:13px;font-weight:700;font-family:inherit;
+    padding:13px 6px;cursor:pointer;
+  }
+
+  form#datos{margin-top:16px;}
+  .campo{margin-bottom:12px;}
+  label{
+    display:block;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.8px;
+    color:var(--muted);margin-bottom:6px;
+  }
+  input[type=text],textarea{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    color:var(--text);
+    font-size:16px;
+    padding:12px;
+    font-family:inherit;
+  }
+  input:focus,textarea:focus{outline:2px solid var(--accent);border-color:var(--accent);}
+  textarea{min-height:84px;resize:vertical;}
+  .fila-scan{display:flex;gap:8px;}
+  .fila-scan input{flex:1;}
+  .btn-escanear{
+    background:var(--panel2);border:1px solid var(--line);
+    color:var(--accent);border-radius:10px;
+    font-size:13px;font-weight:700;font-family:inherit;
+    padding:0 14px;cursor:pointer;white-space:nowrap;
+  }
+  .chk{
+    display:flex;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:11px 12px;margin-bottom:12px;
+    font-size:14px;cursor:pointer;user-select:none;
+  }
+  .chk input{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0;}
+  .chk .gps-estado{margin-left:auto;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;}
+  .chk .gps-estado.ok{color:var(--green);}
+
+  .acciones{
+    position:fixed;bottom:0;left:0;right:0;
+    background:linear-gradient(to top, var(--bg) 75%, transparent);
+    padding:10px 14px 16px;
+    display:none;gap:10px;
+    max-width:520px;margin:0 auto;
+  }
+  .acciones.visible{display:flex;}
+  .acciones button{
+    border:none;border-radius:12px;
+    font-size:15px;font-weight:700;
+    padding:15px 10px;
+    font-family:inherit;cursor:pointer;
+  }
+  .btn-compartir{flex:2.2;background:var(--accent);color:var(--accent-dark);}
+  .btn-compartir:active{filter:brightness(0.9);}
+  .btn-sec{flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);}
+  button:disabled{opacity:0.45;}
+
+  .aviso{
+    margin-top:12px;padding:10px 12px;border-radius:10px;
+    background:var(--panel);border:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);display:none;line-height:1.5;
+  }
+  .aviso.visible{display:block;}
+  #inputFoto{display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">GU</div>
+  <div>
+    <h1>GU Campo</h1>
+    <div class="sub">Grandes usuarios · foto y video</div>
+  </div>
+</header>
+
+<main>
+  <!-- inicio -->
+  <div id="inicio">
+    <button class="btn-grande" id="btnFotoIni" type="button">📷 &nbsp;Sacar foto</button>
+    <button class="btn-grande video" id="btnVideoIni" type="button">🎥 &nbsp;Grabar video</button>
+    <button class="btn-galeria" id="btnGaleria" type="button">🖼️ &nbsp;Elegir foto de la galería</button>
+    <p class="nota">El video se graba adentro de la app (máx. 60 segundos) y se manda
+    junto con la foto sellada. Los datos van estampados en la foto.</p>
+  </div>
+  <input type="file" id="inputFoto" accept="image/*">
+
+  <!-- camara / video / escaner -->
+  <div id="camara">
+    <div class="video-frame">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="foco-ring" id="focoRing"></div>
+      <div class="scan-hint" id="scanHint">Apuntá al código de barras</div>
+      <div class="rec-info" id="recInfo"><span class="punto"></span><span id="recTiempo">00:00</span> / 01:00</div>
+      <button type="button" class="btn-linterna" id="btnLinterna">🔦</button>
+      <div class="zoom-ctl" id="zoomCtl">
+        <span>−</span><input type="range" id="zoomSlider"><span>+</span>
+      </div>
+    </div>
+    <div class="barra-disparo">
+      <button class="btn-cerrar-cam" id="btnCerrarCam" type="button">Cancelar</button>
+      <button class="btn-disparo" id="btnDisparo" type="button" aria-label="Capturar"></button>
+    </div>
+  </div>
+
+  <!-- edicion -->
+  <div id="edicion">
+    <div class="bloque-media" id="bloqueFoto" style="margin-top:0;">
+      <div class="canvas-frame">
+        <canvas id="canvas"></canvas>
+        <button type="button" class="quitar-media" id="btnQuitarFoto">✕</button>
+      </div>
+    </div>
+
+    <div class="bloque-media" id="bloqueVideo">
+      <video id="vistaVideo" controls playsinline></video>
+      <button type="button" class="quitar-media" id="btnQuitarVideo">✕</button>
+    </div>
+
+    <div class="fila-agregar">
+      <button type="button" id="btnMasFoto">📷 ＋ Foto</button>
+      <button type="button" id="btnMasVideo">🎥 ＋ Video</button>
+    </div>
+
+    <form id="datos" onsubmit="return false;">
+      <div class="campo" style="margin-top:16px;">
+        <label for="zona">Zona</label>
+        <input type="text" id="zona" inputmode="numeric" placeholder="Ej: 5">
+      </div>
+
+      <div class="campo">
+        <label for="medidor">N° de medidor</label>
+        <div class="fila-scan">
+          <input type="text" id="medidor" inputmode="numeric" placeholder="Escanealo o escribilo">
+          <button type="button" id="btnScanMed" class="btn-escanear">|||&nbsp;Escanear</button>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="cliente">N° de cliente (opcional)</label>
+        <div class="fila-scan">
+          <input type="text" id="cliente" inputmode="numeric" placeholder="Escanealo o escribilo">
+          <button type="button" id="btnScanCli" class="btn-escanear">|||&nbsp;Escanear</button>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="descripcion">Novedad / observaciones</label>
+        <textarea id="descripcion" placeholder="Ej: Display rotando OK, se registran las pantallas de demanda."></textarea>
+      </div>
+
+      <label class="chk" for="usarGps">
+        <input type="checkbox" id="usarGps">
+        Incluir ubicación GPS
+        <span class="gps-estado" id="gpsEstado"></span>
+      </label>
+    </form>
+  </div>
+
+  <div class="aviso" id="aviso"></div>
+</main>
+
+<div class="acciones" id="acciones">
+  <button class="btn-sec" id="btnNueva" type="button">Nuevo</button>
+  <button class="btn-compartir" id="btnCompartir" type="button">Compartir ➤ WhatsApp</button>
+</div>
+
+<script>
+(function(){
+  var inicio      = document.getElementById('inicio');
+  var camara      = document.getElementById('camara');
+  var video       = document.getElementById('video');
+  var edicion     = document.getElementById('edicion');
+  var inputFoto   = document.getElementById('inputFoto');
+  var canvas      = document.getElementById('canvas');
+  var vistaVideo  = document.getElementById('vistaVideo');
+  var bloqueFoto  = document.getElementById('bloqueFoto');
+  var bloqueVideo = document.getElementById('bloqueVideo');
+  var inpZona     = document.getElementById('zona');
+  var inpMedidor  = document.getElementById('medidor');
+  var inpCliente  = document.getElementById('cliente');
+  var txtDesc     = document.getElementById('descripcion');
+  var chkGps      = document.getElementById('usarGps');
+  var gpsEstado   = document.getElementById('gpsEstado');
+  var acciones    = document.getElementById('acciones');
+  var aviso       = document.getElementById('aviso');
+  var scanHint    = document.getElementById('scanHint');
+  var recInfo     = document.getElementById('recInfo');
+  var recTiempo   = document.getElementById('recTiempo');
+  var btnLinterna = document.getElementById('btnLinterna');
+  var zoomCtl     = document.getElementById('zoomCtl');
+  var zoomSlider  = document.getElementById('zoomSlider');
+  var focoRing    = document.getElementById('focoRing');
+  var btnDisparo  = document.getElementById('btnDisparo');
+  var btnCerrarCam= document.getElementById('btnCerrarCam');
+  var btnFotoIni  = document.getElementById('btnFotoIni');
+  var btnVideoIni = document.getElementById('btnVideoIni');
+  var btnGaleria  = document.getElementById('btnGaleria');
+  var btnMasFoto  = document.getElementById('btnMasFoto');
+  var btnMasVideo = document.getElementById('btnMasVideo');
+  var btnQuitarFoto  = document.getElementById('btnQuitarFoto');
+  var btnQuitarVideo = document.getElementById('btnQuitarVideo');
+  var btnScanMed  = document.getElementById('btnScanMed');
+  var btnScanCli  = document.getElementById('btnScanCli');
+  var btnCompartir= document.getElementById('btnCompartir');
+  var btnNueva    = document.getElementById('btnNueva');
+
+  var CLAVE_MEM = 'dpec_gu_campo';
+  var MAX_LADO  = 1600;
+  var MAX_SEG   = 60;
+
+  var fotoOff = null;        // canvas con la foto (sin sello)
+  var fotoBlob = null;       // JPG sellado pre-armado
+  var videoBlob = null;      // video grabado
+  var videoExt = 'mp4';
+  var videoURL = null;
+  var fechaNov = null;
+  var gps = null;
+
+  var stream = null, track = null, torchOn = false;
+  var modoCamara = 'foto';   // 'foto' | 'video' | 'scan'
+  var scanTimer = null, detector = null, scanDestino = null;
+  var grabador = null, trozos = [], recTimer = null, recInicio = 0;
+  var timerRender = null;
+  var zoomMin = 1, zoomMax = 1, baseDist = 0, baseZoom = 1;
+
+  // ================= memoria =================
+  try{
+    var mem = JSON.parse(localStorage.getItem(CLAVE_MEM) || '{}');
+    if(mem.zona) inpZona.value = mem.zona;
+  }catch(e){}
+  function guardarMem(){
+    try{ localStorage.setItem(CLAVE_MEM, JSON.stringify({ zona: inpZona.value })); }catch(e){}
+  }
+
+  // ================= pantallas =================
+  function mostrarPantalla(cual){
+    inicio.style.display = (cual === 'inicio') ? 'block' : 'none';
+    camara.classList.toggle('visible', cual === 'camara');
+    edicion.classList.toggle('visible', cual === 'edicion');
+    acciones.classList.toggle('visible', cual === 'edicion');
+  }
+  function hayMedios(){ return !!(fotoOff || videoBlob); }
+  function irEdicion(){
+    ocultarAviso();
+    bloqueFoto.classList.toggle('visible', !!fotoOff);
+    bloqueVideo.classList.toggle('visible', !!videoBlob);
+    btnMasFoto.style.display = fotoOff ? 'none' : '';
+    btnMasVideo.style.display = videoBlob ? 'none' : '';
+    mostrarPantalla('edicion');
+  }
+
+  // ================= camara =================
+  btnFotoIni.addEventListener('click', function(){ abrirCamara('foto'); });
+  btnVideoIni.addEventListener('click', function(){ abrirCamara('video'); });
+  btnMasFoto.addEventListener('click', function(){ abrirCamara('foto'); });
+  btnMasVideo.addEventListener('click', function(){ abrirCamara('video'); });
+  btnGaleria.addEventListener('click', function(){ inputFoto.click(); });
+
+  function abrirCamara(modo){
+    ocultarAviso();
+    modoCamara = modo;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      mostrarAviso('Este navegador no permite la cámara en vivo.');
+      return;
+    }
+    var quiereAudio = (modo === 'video');
+    navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1920} },
+      audio: quiereAudio
+    }).then(function(s){
+      stream = s;
+      video.srcObject = s;
+      video.muted = true;
+      var esScan = (modo === 'scan');
+      scanHint.style.display = esScan ? 'block' : 'none';
+      recInfo.style.display = 'none';
+      btnDisparo.style.display = esScan ? 'none' : '';
+      btnDisparo.classList.toggle('grabar', modo === 'video');
+      btnDisparo.classList.remove('grabando');
+      mostrarPantalla('camara');
+      setTimeout(configurarControles, 500);
+      if(esScan) iniciarDeteccion();
+    }).catch(function(err){
+      if(location.protocol === 'file:')
+        mostrarAviso('La cámara solo funciona abriendo la app desde el link https (GitHub Pages).');
+      else if(err && err.name === 'NotAllowedError')
+        mostrarAviso('El navegador no dio permiso de cámara' + (quiereAudio ? '/micrófono' : '') + '. Revisá los permisos del sitio.');
+      else
+        mostrarAviso('No se pudo abrir la cámara (' + (err && err.name ? err.name : 'error') + ').');
+    });
+  }
+
+  function cerrarCamara(){
+    clearInterval(scanTimer); scanTimer = null;
+    clearInterval(recTimer); recTimer = null;
+    if(grabador && grabador.state !== 'inactive'){ try{ grabador.stop(); }catch(e){} }
+    grabador = null;
+    track = null; torchOn = false;
+    btnLinterna.classList.remove('activa');
+    btnLinterna.style.display = 'none';
+    zoomCtl.style.display = 'none';
+    recInfo.style.display = 'none';
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+    video.srcObject = null;
+  }
+
+  btnCerrarCam.addEventListener('click', function(){
+    cerrarCamara();
+    if(hayMedios()) irEdicion(); else mostrarPantalla('inicio');
+  });
+
+  // ================= disparo: foto o video =================
+  btnDisparo.addEventListener('click', function(){
+    if(modoCamara === 'foto') sacarFoto();
+    else if(modoCamara === 'video'){
+      if(grabador && grabador.state === 'recording') detenerGrabacion();
+      else iniciarGrabacion();
+    }
+  });
+
+  function sacarFoto(){
+    if(!stream) return;
+    var vw = video.videoWidth, vh = video.videoHeight;
+    if(!vw || !vh) return;
+    var esc = Math.min(1, MAX_LADO / Math.max(vw, vh));
+    var off = document.createElement('canvas');
+    off.width = Math.round(vw * esc); off.height = Math.round(vh * esc);
+    off.getContext('2d').drawImage(video, 0, 0, off.width, off.height);
+    fotoOff = off;
+    if(!fechaNov) fechaNov = new Date();
+    cerrarCamara();
+    if(chkGps.checked) pedirGps();
+    render();
+    irEdicion();
+  }
+
+  function mimeVideo(){
+    var ops = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    if(!window.MediaRecorder) return '';
+    for(var i=0;i<ops.length;i++){
+      try{ if(MediaRecorder.isTypeSupported(ops[i])) return ops[i]; }catch(e){}
+    }
+    return '';
+  }
+
+  function iniciarGrabacion(){
+    if(!stream) return;
+    var mime = mimeVideo();
+    if(!mime && !window.MediaRecorder){
+      mostrarAviso('Este navegador no puede grabar video. Grabalo con la cámara del teléfono y mandalo directo al grupo.');
+      return;
+    }
+    trozos = [];
+    try{
+      grabador = mime
+        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 })
+        : new MediaRecorder(stream);
+    }catch(e){
+      mostrarAviso('No se pudo iniciar la grabación (' + e.name + ').');
+      return;
+    }
+    videoExt = (grabador.mimeType || mime || '').indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+    grabador.ondataavailable = function(ev){ if(ev.data && ev.data.size) trozos.push(ev.data); };
+    grabador.onstop = function(){
+      videoBlob = new Blob(trozos, { type: (grabador && grabador.mimeType) || 'video/' + videoExt });
+      trozos = [];
+      if(videoURL) URL.revokeObjectURL(videoURL);
+      videoURL = URL.createObjectURL(videoBlob);
+      vistaVideo.src = videoURL;
+      if(!fechaNov) fechaNov = new Date();
+      cerrarCamara();
+      if(chkGps.checked) pedirGps();
+      render();
+      irEdicion();
+    };
+    grabador.start();
+    recInicio = Date.now();
+    recInfo.style.display = 'block';
+    btnDisparo.classList.add('grabando');
+    recTimer = setInterval(function(){
+      var seg = Math.floor((Date.now() - recInicio) / 1000);
+      function p(n){ return (n<10?'0':'')+n; }
+      recTiempo.textContent = p(Math.floor(seg/60)) + ':' + p(seg%60);
+      if(seg >= MAX_SEG) detenerGrabacion();
+    }, 250);
+  }
+
+  function detenerGrabacion(){
+    clearInterval(recTimer); recTimer = null;
+    if(grabador && grabador.state === 'recording'){
+      try{ grabador.stop(); }catch(e){}
+    }
+  }
+
+  // ================= galeria =================
+  inputFoto.addEventListener('change', function(){
+    var file = inputFoto.files && inputFoto.files[0];
+    if(!file) return;
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      var esc = Math.min(1, MAX_LADO / Math.max(img.width, img.height));
+      var off = document.createElement('canvas');
+      off.width = Math.round(img.width * esc); off.height = Math.round(img.height * esc);
+      off.getContext('2d').drawImage(img, 0, 0, off.width, off.height);
+      fotoOff = off;
+      if(!fechaNov) fechaNov = new Date();
+      inputFoto.value = '';
+      if(chkGps.checked) pedirGps();
+      render();
+      irEdicion();
+    };
+    img.onerror = function(){ mostrarAviso('No se pudo abrir la imagen.'); };
+    img.src = url;
+  });
+
+  // ================= quitar medios =================
+  btnQuitarFoto.addEventListener('click', function(){
+    fotoOff = null; fotoBlob = null;
+    if(hayMedios()) irEdicion(); else { mostrarPantalla('inicio'); }
+  });
+  btnQuitarVideo.addEventListener('click', function(){
+    videoBlob = null;
+    if(videoURL){ URL.revokeObjectURL(videoURL); videoURL = null; }
+    vistaVideo.removeAttribute('src');
+    if(hayMedios()) irEdicion(); else { mostrarPantalla('inicio'); }
+  });
+
+  // ================= controles de camara =================
+  function configurarControles(){
+    track = stream ? stream.getVideoTracks()[0] : null;
+    if(!track || !track.getCapabilities) return;
+    var caps = {};
+    try{ caps = track.getCapabilities(); }catch(e){ return; }
+    if(caps.torch) btnLinterna.style.display = 'flex';
+    if(caps.zoom && caps.zoom.max > caps.zoom.min){
+      zoomMin = caps.zoom.min; zoomMax = caps.zoom.max;
+      var z = zoomMin;
+      try{ z = track.getSettings().zoom || zoomMin; }catch(e){}
+      zoomSlider.min = zoomMin; zoomSlider.max = zoomMax;
+      zoomSlider.step = caps.zoom.step || 0.1;
+      zoomSlider.value = z;
+      zoomCtl.style.display = 'flex';
+    }
+  }
+  function aplicarZoom(v){
+    if(!track) return;
+    v = Math.max(zoomMin, Math.min(zoomMax, v));
+    zoomSlider.value = v;
+    try{ track.applyConstraints({ advanced:[{ zoom: v }] }).catch(function(){}); }catch(e){}
+  }
+  zoomSlider.addEventListener('input', function(){ aplicarZoom(parseFloat(zoomSlider.value)); });
+  btnLinterna.addEventListener('click', function(){
+    if(!track) return;
+    torchOn = !torchOn;
+    try{
+      track.applyConstraints({ advanced:[{ torch: torchOn }] })
+        .catch(function(){ torchOn=false; btnLinterna.classList.remove('activa'); });
+    }catch(e){ torchOn=false; }
+    btnLinterna.classList.toggle('activa', torchOn);
+  });
+  video.addEventListener('click', function(ev){
+    if(!track) return;
+    var r = video.getBoundingClientRect();
+    var x = (ev.clientX - r.left) / r.width;
+    var y = (ev.clientY - r.top) / r.height;
+    focoRing.style.left = (ev.clientX - r.left - 35) + 'px';
+    focoRing.style.top  = (ev.clientY - r.top  - 35) + 'px';
+    focoRing.classList.remove('anim');
+    void focoRing.offsetWidth;
+    focoRing.classList.add('anim');
+    try{
+      track.applyConstraints({ advanced:[{ focusMode:'single-shot', pointsOfInterest:[{x:x,y:y}] }] })
+        .catch(function(){
+          try{ track.applyConstraints({ advanced:[{ pointsOfInterest:[{x:x,y:y}] }] }).catch(function(){}); }catch(e){}
+        });
+    }catch(e){}
+  });
+  function distTouches(ev){
+    var dx = ev.touches[0].clientX - ev.touches[1].clientX;
+    var dy = ev.touches[0].clientY - ev.touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+  video.addEventListener('touchstart', function(ev){
+    if(ev.touches.length === 2){
+      baseDist = distTouches(ev);
+      baseZoom = parseFloat(zoomSlider.value) || zoomMin;
+    }
+  }, {passive:true});
+  video.addEventListener('touchmove', function(ev){
+    if(ev.touches.length === 2 && baseDist > 0){
+      ev.preventDefault();
+      aplicarZoom(baseZoom * (distTouches(ev) / baseDist));
+    }
+  }, {passive:false});
+  video.addEventListener('touchend', function(){ baseDist = 0; }, {passive:true});
+
+  // ================= escaner =================
+  btnScanMed.addEventListener('click', function(){ pedirEscaneo(inpMedidor, 'Apuntá al código del MEDIDOR'); });
+  btnScanCli.addEventListener('click', function(){ pedirEscaneo(inpCliente, 'Apuntá al código del CLIENTE'); });
+  function pedirEscaneo(destino, msg){
+    if(!('BarcodeDetector' in window)){
+      mostrarAviso('Este navegador no tiene lector de códigos. Escribí el número a mano.');
+      return;
+    }
+    scanDestino = destino;
+    scanHint.textContent = msg;
+    abrirCamara('scan');
+  }
+  function iniciarDeteccion(){
+    try{
+      detector = new BarcodeDetector({ formats:['code_128','code_39','itf','ean_13','ean_8','upc_a','upc_e','codabar','qr_code','data_matrix'] });
+    }catch(e){
+      try{ detector = new BarcodeDetector(); }
+      catch(e2){ cerrarCamara(); if(hayMedios()) irEdicion(); else mostrarPantalla('inicio'); mostrarAviso('No se pudo iniciar el lector.'); return; }
+    }
+    scanTimer = setInterval(function(){
+      if(!stream || !video.videoWidth) return;
+      detector.detect(video).then(function(codigos){
+        if(!codigos || !codigos.length) return;
+        var val = (codigos[0].rawValue || '').trim();
+        if(!val) return;
+        if(navigator.vibrate) navigator.vibrate(120);
+        if(scanDestino) scanDestino.value = val;
+        cerrarCamara();
+        if(hayMedios()) irEdicion(); else mostrarPantalla('inicio');
+        pedirRender();
+      }).catch(function(){});
+    }, 300);
+  }
+
+  // ================= GPS =================
+  chkGps.addEventListener('change', function(){
+    if(chkGps.checked) pedirGps();
+    else { gps = null; gpsEstado.textContent=''; gpsEstado.classList.remove('ok'); pedirRender(); }
+  });
+  function pedirGps(){
+    if(!navigator.geolocation){ gpsEstado.textContent='Sin GPS'; return; }
+    gpsEstado.textContent = 'Buscando…'; gpsEstado.classList.remove('ok');
+    navigator.geolocation.getCurrentPosition(function(pos){
+      gps = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      gpsEstado.textContent = gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
+      gpsEstado.classList.add('ok');
+      pedirRender();
+    }, function(){ gps = null; gpsEstado.textContent='Sin señal'; pedirRender(); },
+    { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+  }
+
+  // ================= sello =================
+  [inpZona, inpMedidor, inpCliente, txtDesc].forEach(function(el){
+    el.addEventListener('input', function(){ guardarMem(); pedirRender(); });
+  });
+  function pedirRender(){
+    clearTimeout(timerRender);
+    timerRender = setTimeout(function(){ render(); prepararBlobFoto(); }, 250);
+  }
+  function fmtFecha(d){
+    function p(n){ return (n<10?'0':'')+n; }
+    return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear() +
+           ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function envolver(ctx, texto, maxAncho){
+    var palabras = texto.split(/\s+/), lineas = [], linea = '';
+    for(var i=0;i<palabras.length;i++){
+      var prueba = linea ? linea + ' ' + palabras[i] : palabras[i];
+      if(ctx.measureText(prueba).width > maxAncho && linea){
+        lineas.push(linea); linea = palabras[i];
+      } else { linea = prueba; }
+    }
+    if(linea) lineas.push(linea);
+    return lineas;
+  }
+
+  function render(){
+    if(!fotoOff) return;
+    var ctx = canvas.getContext('2d');
+    var w = fotoOff.width, h = fotoOff.height;
+    canvas.width = w; canvas.height = h;
+    ctx.drawImage(fotoOff, 0, 0);
+
+    var zona = inpZona.value.trim();
+    var med  = inpMedidor.value.trim();
+    var cli  = inpCliente.value.trim();
+    var desc = txtDesc.value.trim();
+
+    var pad   = Math.round(w * 0.030);
+    var fTit  = Math.round(w * 0.042);
+    var fMed  = Math.round(w * 0.034);
+    var fInfo = Math.round(w * 0.028);
+    var fDesc = Math.round(w * 0.033);
+    var interl= 1.32;
+
+    var titulo = zona ? ('GU  ·  ZONA ' + zona) : 'GRAN USUARIO';
+
+    var l2 = [];
+    if(med) l2.push('MEDIDOR ' + med);
+    if(cli) l2.push('CLIENTE ' + cli);
+    l2 = l2.join('  ·  ');
+
+    var info = fmtFecha(fechaNov || new Date());
+    if(gps) info += '   ' + gps.lat.toFixed(5) + ', ' + gps.lon.toFixed(5);
+
+    ctx.font = '700 ' + fMed + 'px system-ui, sans-serif';
+    var lineas2 = l2 ? envolver(ctx, l2, w - pad*2) : [];
+    ctx.font = '500 ' + fDesc + 'px system-ui, sans-serif';
+    var lineasDesc = desc ? envolver(ctx, desc, w - pad*2) : [];
+
+    var alto = pad + fTit*interl + lineas2.length*fMed*interl + fInfo*interl;
+    if(lineasDesc.length) alto += pad*0.4 + lineasDesc.length*fDesc*interl;
+    alto += pad*0.7;
+
+    var y0 = h - alto;
+    ctx.fillStyle = 'rgba(0,0,0,0.68)';
+    ctx.fillRect(0, y0, w, alto);
+    ctx.fillStyle = '#FF9F43';
+    ctx.fillRect(0, y0, w, Math.max(3, Math.round(w*0.004)));
+
+    var y = y0 + pad;
+    ctx.textBaseline = 'top';
+
+    ctx.font = '800 ' + fTit + 'px system-ui, sans-serif';
+    ctx.fillStyle = '#FF9F43';
+    ctx.fillText(titulo, pad, y);
+    y += fTit*interl;
+
+    if(lineas2.length){
+      ctx.font = '700 ' + fMed + 'px system-ui, sans-serif';
+      ctx.fillStyle = '#FFFFFF';
+      for(var i=0;i<lineas2.length;i++){ ctx.fillText(lineas2[i], pad, y); y += fMed*interl; }
+    }
+
+    ctx.font = '600 ' + fInfo + 'px ui-monospace, Menlo, monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(info, pad, y);
+    y += fInfo*interl;
+
+    if(lineasDesc.length){
+      y += pad*0.4;
+      ctx.font = '500 ' + fDesc + 'px system-ui, sans-serif';
+      ctx.fillStyle = '#FFFFFF';
+      for(var j=0;j<lineasDesc.length;j++){ ctx.fillText(lineasDesc[j], pad, y); y += fDesc*interl; }
+    }
+  }
+
+  function prepararBlobFoto(){
+    fotoBlob = null;
+    if(!fotoOff) return;
+    canvas.toBlob(function(b){ fotoBlob = b; }, 'image/jpeg', 0.88);
+  }
+
+  // ================= compartir =================
+  btnCompartir.addEventListener('click', function(){
+    if(!hayMedios()){ mostrarAviso('Primero sacá una foto o grabá un video.'); return; }
+    btnCompartir.disabled = true;
+    btnCompartir.textContent = 'Preparando…';
+
+    function continuar(fb){
+      btnCompartir.disabled = false;
+      btnCompartir.textContent = 'Compartir ➤ WhatsApp';
+      var base = 'gu';
+      if(inpZona.value.trim()) base += '_zona' + inpZona.value.trim();
+      if(inpMedidor.value.trim()) base += '_med' + inpMedidor.value.trim();
+      var files = [];
+      if(fb) files.push(new File([fb], base + '.jpg', { type:'image/jpeg' }));
+      if(videoBlob) files.push(new File([videoBlob], base + '.' + videoExt, { type: videoBlob.type || ('video/' + videoExt) }));
+      if(!files.length){ mostrarAviso('No se pudo preparar el material.'); return; }
+      var texto = armarTexto();
+
+      if(navigator.canShare && navigator.canShare({ files: files })){
+        navigator.share({ files: files, text: texto })
+          .catch(function(err){
+            if(err && err.name !== 'AbortError') descargarTodo(files);
+          });
+      } else {
+        descargarTodo(files);
+        mostrarAviso('Este navegador no puede compartir directo. Se descargó el material — mandalo al grupo desde WhatsApp.');
+      }
+    }
+
+    if(!fotoOff){ continuar(null); }
+    else if(fotoBlob){ continuar(fotoBlob); }
+    else { render(); canvas.toBlob(continuar, 'image/jpeg', 0.88); }
+  });
+
+  function armarTexto(){
+    var t = [];
+    if(inpZona.value.trim()) t.push('GU Zona ' + inpZona.value.trim());
+    if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
+    if(inpCliente.value.trim()) t.push('Cliente ' + inpCliente.value.trim());
+    var linea = t.join(' · ');
+    var desc = txtDesc.value.trim();
+    return desc ? (linea ? linea + '\n' + desc : desc) : linea;
+  }
+
+  function descargarTodo(files){
+    files.forEach(function(f){
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    });
+  }
+
+  // ================= nuevo =================
+  btnNueva.addEventListener('click', function(){
+    fotoOff = null; fotoBlob = null; videoBlob = null;
+    if(videoURL){ URL.revokeObjectURL(videoURL); videoURL = null; }
+    vistaVideo.removeAttribute('src');
+    inpMedidor.value = ''; inpCliente.value = '';
+    txtDesc.value = '';
+    fechaNov = null;
+    ocultarAviso();
+    mostrarPantalla('inicio');
+  });
+
+  // ================= avisos =================
+  function mostrarAviso(m){ aviso.textContent = m; aviso.classList.add('visible'); }
+  function ocultarAviso(){ aviso.classList.remove('visible'); }
+
+  mostrarPantalla('inicio');
+})();
+</script>
+</body>
+</html>
