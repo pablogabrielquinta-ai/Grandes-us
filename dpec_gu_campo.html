@@ -232,7 +232,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto y video</div>
+    <div class="sub">Grandes usuarios · foto y video · v3</div>
   </div>
 </header>
 
@@ -564,6 +564,7 @@
     cerrarCamara();
     if(chkGps.checked) pedirGps();
     render();
+    prepararBlobFoto();
     irEdicion();
   }
 
@@ -642,6 +643,7 @@
       inputFoto.value = '';
       if(chkGps.checked) pedirGps();
       render();
+      prepararBlobFoto();
       irEdicion();
     };
     img.onerror = function(){ mostrarAviso('No se pudo abrir la imagen.'); };
@@ -900,15 +902,34 @@
       if(!files.length){ mostrarAviso('No se pudo preparar el material.'); return; }
       var texto = armarTexto();
 
-      if(navigator.canShare && navigator.canShare({ files: files })){
-        navigator.share({ files: files, text: texto })
-          .then(function(){ borrarCampos(); })
+      function intentar(fs, resto){
+        navigator.share({ files: fs, text: texto })
+          .then(function(){
+            borrarCampos();
+            if(resto && resto.length){
+              descargarTodo(resto);
+              mostrarAviso('El teléfono no dejó mandar todo junto: fue ' + fs.length + ' archivo(s) por WhatsApp y el resto se descargó — adjuntalo en el chat desde la galería.');
+            }
+          })
           .catch(function(err){
-            if(err && err.name !== 'AbortError') descargarTodo(files);
+            if(err && err.name !== 'AbortError'){
+              descargarTodo(files);
+              var det = (err && err.name ? err.name : '?') + (err && err.message ? ' — ' + String(err.message).slice(0,120) : '');
+              mostrarAviso('No se pudo compartir directo. Motivo: ' + det + '. Se descargó el material — mandalo desde WhatsApp y pasale este motivo a Pablo.');
+            }
           });
+      }
+
+      if(navigator.canShare && navigator.canShare({ files: files })){
+        intentar(files, []);
+      } else if(files.length > 1 && navigator.canShare && navigator.canShare({ files: [files[files.length-1]] })){
+        intentar([files[files.length-1]], files.slice(0, files.length-1));
+      } else if(navigator.canShare && navigator.canShare({ files: [files[0]] })){
+        intentar([files[0]], files.slice(1));
       } else {
         descargarTodo(files);
-        mostrarAviso('Este navegador no puede compartir directo. Se descargó el material — mandalo al grupo desde WhatsApp.');
+        var soporta = navigator.canShare ? 'canShare rechazó los archivos' : 'el navegador no tiene canShare';
+        mostrarAviso('Este teléfono no acepta compartir estos archivos directo (' + soporta + '). Se descargaron — mandalos al grupo desde WhatsApp.');
       }
     }
 
@@ -952,7 +973,11 @@
   });
 
   // ================= avisos =================
-  function mostrarAviso(m){ aviso.textContent = m; aviso.classList.add('visible'); }
+  function mostrarAviso(m){
+    aviso.textContent = m;
+    aviso.classList.add('visible');
+    try{ aviso.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(e){}
+  }
   function ocultarAviso(){ aviso.classList.remove('visible'); }
 
   mostrarPantalla('inicio');
