@@ -168,7 +168,7 @@
     text-transform:uppercase;letter-spacing:0.8px;
     color:var(--muted);margin-bottom:6px;
   }
-  input[type=text],textarea{
+  input[type=text],textarea,select{
     width:100%;
     background:var(--panel);
     border:1px solid var(--line);
@@ -178,10 +178,14 @@
     padding:12px;
     font-family:inherit;
   }
-  input:focus,textarea:focus{outline:2px solid var(--accent);border-color:var(--accent);}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);border-color:var(--accent);}
   textarea{min-height:84px;resize:vertical;}
   .fila-scan{display:flex;gap:8px;}
   .fila-scan input{flex:1;}
+  #zona{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A2917F' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;appearance:none;-webkit-appearance:none;
+  }
   .btn-escanear{
     background:var(--panel2);border:1px solid var(--line);
     color:var(--accent);border-radius:10px;
@@ -232,7 +236,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto y video · v5</div>
+    <div class="sub">Grandes usuarios · foto y video · v6</div>
   </div>
 </header>
 
@@ -291,7 +295,34 @@
     <form id="datos" onsubmit="return false;">
       <div class="campo" style="margin-top:16px;">
         <label for="zona">Zona</label>
-        <input type="text" id="zona" inputmode="numeric" placeholder="Ej: 5">
+        <select id="zona">
+          <option value="">—</option>
+          <option>3 DE ABRIL</option>
+          <option>AGUAS DE CORRIENTES</option>
+          <option>ARMENIA</option>
+          <option>AYACUCHO-CHACABUCO</option>
+          <option>CAZADORES</option>
+          <option>CENTRO 1</option>
+          <option>CENTRO 2</option>
+          <option>CENTRO 3</option>
+          <option>CENTRO 4</option>
+          <option>CENTRO 5</option>
+          <option>CENTRO 6</option>
+          <option>CENTRO 7</option>
+          <option>CENTRO 8</option>
+          <option>CENTRO JUNIN</option>
+          <option>FERRE</option>
+          <option>INDEPENDENCIA</option>
+          <option>MAIPU</option>
+          <option>P. MITRE</option>
+          <option>RUTA NORTE</option>
+          <option>RUTA SUR</option>
+          <option>SHOP.Z1-2-6</option>
+          <option>SHOP.Z3-4-5</option>
+          <option>SUR 1</option>
+          <option>SUR 2</option>
+          <option>UNIPLAZA</option>
+        </select>
       </div>
 
       <div class="campo">
@@ -790,6 +821,7 @@
   }
 
   // ================= sello =================
+  inpZona.addEventListener('change', function(){ guardarMem(); guardarCampos(); pedirRender(); });
   [inpZona, inpMedidor, inpCliente, txtDesc].forEach(function(el){
     el.addEventListener('input', function(){ guardarMem(); guardarCampos(); pedirRender(); });
   });
