@@ -568,6 +568,10 @@
     irEdicion();
   }
 
+  function mimeLimpio(m){
+    return (m || 'video/mp4').split(';')[0].trim() || 'video/mp4';
+  }
+
   function mimeVideo(){
     var ops = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
     if(!window.MediaRecorder) return '';
@@ -596,7 +600,7 @@
     videoExt = (grabador.mimeType || mime || '').indexOf('mp4') !== -1 ? 'mp4' : 'webm';
     grabador.ondataavailable = function(ev){ if(ev.data && ev.data.size) trozos.push(ev.data); };
     grabador.onstop = function(){
-      videoBlob = new Blob(trozos, { type: (grabador && grabador.mimeType) || 'video/' + videoExt });
+      videoBlob = new Blob(trozos, { type: mimeLimpio((grabador && grabador.mimeType) || ('video/' + videoExt)) });
       trozos = [];
       if(videoURL) URL.revokeObjectURL(videoURL);
       videoURL = URL.createObjectURL(videoBlob);
@@ -898,7 +902,7 @@
       if(inpMedidor.value.trim()) base += '_med' + inpMedidor.value.trim();
       var files = [];
       if(fb) files.push(new File([fb], base + '.jpg', { type:'image/jpeg' }));
-      if(videoBlob) files.push(new File([videoBlob], base + '.' + videoExt, { type: videoBlob.type || ('video/' + videoExt) }));
+      if(videoBlob) files.push(new File([videoBlob], base + '.' + videoExt, { type: mimeLimpio(videoBlob.type || ('video/' + videoExt)) }));
       if(!files.length){ mostrarAviso('No se pudo preparar el material.'); return; }
       var texto = armarTexto();
 
