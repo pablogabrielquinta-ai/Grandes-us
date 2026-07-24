@@ -232,7 +232,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto y video · v4</div>
+    <div class="sub">Grandes usuarios · foto y video · v5</div>
   </div>
 </header>
 
@@ -497,8 +497,11 @@
       return;
     }
     var quiereAudio = (modo === 'video');
+    var resVideo = (modo === 'video')
+      ? { facingMode:'environment', width:{ideal:1280}, height:{ideal:1280}, frameRate:{ideal:24} }
+      : { facingMode:'environment', width:{ideal:1920}, height:{ideal:1920} };
     navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1920} },
+      video: resVideo,
       audio: quiereAudio
     }).then(function(s){
       stream = s;
@@ -591,7 +594,7 @@
     trozos = [];
     try{
       grabador = mime
-        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 })
+        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1500000 })
         : new MediaRecorder(stream);
     }catch(e){
       mostrarAviso('No se pudo iniciar la grabación (' + e.name + ').');
@@ -924,12 +927,14 @@
           });
       }
 
+      // La foto lleva el sello con todos los datos: si el teléfono no deja
+      // mandar foto+video juntos, priorizamos la foto y el video se descarga aparte.
       if(navigator.canShare && navigator.canShare({ files: files })){
         intentar(files, []);
-      } else if(files.length > 1 && navigator.canShare && navigator.canShare({ files: [files[files.length-1]] })){
-        intentar([files[files.length-1]], files.slice(0, files.length-1));
-      } else if(navigator.canShare && navigator.canShare({ files: [files[0]] })){
+      } else if(files.length > 1 && navigator.canShare && navigator.canShare({ files: [files[0]] })){
         intentar([files[0]], files.slice(1));
+      } else if(navigator.canShare && navigator.canShare({ files: [files[files.length-1]] })){
+        intentar([files[files.length-1]], files.slice(0, files.length-1));
       } else {
         descargarTodo(files);
         var soporta = navigator.canShare ? 'canShare rechazó los archivos' : 'el navegador no tiene canShare';
