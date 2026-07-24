@@ -1,0 +1,16 @@
+{
+  "name": "DPEC GU Campo",
+  "short_name": "GU Campo",
+  "description": "Fotos y video de grandes usuarios con sello de zona, medidor y cliente",
+  "start_url": "./dpec_gu_campo.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#161210",
+  "theme_color": "#161210",
+  "lang": "es-AR",
+  "icons": [
+    { "src": "gu-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "gu-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

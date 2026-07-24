@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#161210">
+<link rel="manifest" href="gu-manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="gu-icon-192.png">
+<link rel="apple-touch-icon" href="gu-icon-192.png">
 <title>DPEC · GU Campo</title>
 <style>
   :root{
@@ -236,7 +239,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto y video · v6</div>
+    <div class="sub">Grandes usuarios · foto y video · v7</div>
   </div>
 </header>
 
@@ -1022,6 +1025,11 @@
   function ocultarAviso(){ aviso.classList.remove('visible'); }
 
   mostrarPantalla('inicio');
+
+  // service worker (permite instalar como app y abrir sin señal)
+  if('serviceWorker' in navigator && location.protocol === 'https:'){
+    navigator.serviceWorker.register('gu-sw.js').catch(function(){});
+  }
 })();
 </script>
 </body>
