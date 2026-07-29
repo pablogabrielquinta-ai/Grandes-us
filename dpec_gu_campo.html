@@ -185,7 +185,7 @@
   textarea{min-height:84px;resize:vertical;}
   .fila-scan{display:flex;gap:8px;}
   .fila-scan input{flex:1;}
-  #zona, #ordenativo{
+  #zona{
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A2917F' stroke-width='2' fill='none'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 12px center;appearance:none;-webkit-appearance:none;
   }
@@ -239,7 +239,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto y video · v8</div>
+    <div class="sub">Grandes usuarios · foto y video · v9</div>
   </div>
 </header>
 
@@ -345,13 +345,6 @@
       </div>
 
       <div class="campo">
-        <label for="ordenativo">Código de novedad (opcional)</label>
-        <select id="ordenativo">
-          <option value="">— Elegir y agregar —</option>
-        </select>
-      </div>
-
-      <div class="campo">
         <label for="descripcion">Novedad / observaciones</label>
         <textarea id="descripcion" placeholder="Ej: Display rotando OK, se registran las pantallas de demanda."></textarea>
       </div>
@@ -387,7 +380,6 @@
   var inpMedidor  = document.getElementById('medidor');
   var inpCliente  = document.getElementById('cliente');
   var txtDesc     = document.getElementById('descripcion');
-  var selOrden    = document.getElementById('ordenativo');
   var chkGps      = document.getElementById('usarGps');
   var gpsEstado   = document.getElementById('gpsEstado');
   var acciones    = document.getElementById('acciones');
@@ -419,22 +411,6 @@
 
   var CLAVE_MEM = 'dpec_gu_campo';
   var MAX_LADO  = 1600;
-  var ORDENATIVOS = [[1,"No se encuentra Suministro"],[2,"Conexion directa sin ficha"],[3,"Medidor sin ficha"],[4,"Casa desocupada"],[5,"No se encuentra medidor - Caja vacia"],[6,"Caja de medicion obstruida o inaccesible"],[7,"Caja o gabinete con candado"],[8,"Medidor interno"],[9,"No se encuentra responsable"],[10,"Animal peligroso"],[11,"Medicion c/tra--f. de intensidad o multiplic."],[12,"Actividad comercial no registrada"],[13,"Actividad industrial no registrada"],[14,"Suministro Cortado"],[20,"Pilar defectuoso o inexistente"],[21,"Pilar o caja con tension"],[22,"Caja del medidor precaria u obsoleta"],[23,"Caja sin soporte de medidor"],[24,"Tapa de caja danada o inexistente"],[25,"Vidrio de tapa de caja roto o inexistente"],[26,"Cierre de tapa de caja trabado"],[27,"Cierre de tapa de caja sin precinto"],[28,"Precinto de tapa de caja manipulado"],[29,"Contratapa danada o inexistente"],[30,"Vidrio de contratapa roto"],[31,"Caja fusible en mal estado (acometida subt.)"],[32,"Tapa de caja de fusibles danada o inexistente"],[40,"Cable de acometida defectuoso"],[41,"Portafusibles defectuosos"],[42,"Morsetos inexistentes"],[43,"Conexion directa fuera de la caja"],[44,"Derivacion desde la acometida"],[45,"Conexion directa dentro de la caja"],[46,"Derivacion dentro de la caja"],[47,"Posible derivacion o conexion directa"],[48,"Estado ok"],[60,"Medidor fuera de soporte"],[61,"Medidor tumbado"],[62,"Medidor desconectado"],[63,"Medidor dañado"],[64,"Medidor no funciona"],[65,"Medidor obsoleto"],[66,"Visualizacion de integrador imposible"],[67,"Digitos desalineados"],[68,"Bornera quemada o con descargas"],[69,"Bornera sin tapa"],[70,"Puente de tension en bornera acces. y s/sold."],[71,"Medidor sin precintos"],[72,"Tapa de bornera sin precintos"],[73,"Precintos de medidor manipulados"],[74,"Precintos de tapa bornera--anipulados"],[75,"Tapa de bornera accesible y sin soldadura"],[80,"Medidor con fase puenteada"],[81,"Medidor con puente de tension abierto"],[82,"Medidor con fase invertida"],[83,"Disco trabado o posiblemente frenado"],[84,"Integrador trabado o posiblemente danado"],[85,"Giro al reves"],[86,"Medidor con insectos"],[87,"Medidor con objetos externos introducidos"]];
-  (function poblarOrdenativos(){
-    for(var i=0;i<ORDENATIVOS.length;i++){
-      var op = document.createElement('option');
-      op.value = ORDENATIVOS[i][0] + ' - ' + ORDENATIVOS[i][1];
-      op.textContent = ORDENATIVOS[i][0] + ' - ' + ORDENATIVOS[i][1];
-      selOrden.appendChild(op);
-    }
-  })();
-  selOrden.addEventListener('change', function(){
-    if(!selOrden.value) return;
-    var actual = txtDesc.value.trim();
-    txtDesc.value = actual ? (actual + ' \u00b7 ' + selOrden.value) : selOrden.value;
-    selOrden.value = '';
-    guardarCampos(); pedirRender();
-  });
   var MAX_SEG   = 60;
 
   var fotoOff = null;        // canvas con la foto (sin sello)
