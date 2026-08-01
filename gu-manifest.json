@@ -1,7 +1,7 @@
 {
   "name": "DPEC GU Campo",
   "short_name": "GU Campo",
-  "description": "Fotos y video de grandes usuarios con sello de zona, medidor y cliente",
+  "description": "Fotos de grandes usuarios con sello de zona, medidor y cliente",
   "start_url": "./dpec_gu_campo.html",
   "scope": "./",
   "display": "standalone",

@@ -50,10 +50,6 @@
     font-size:17px;font-weight:800;font-family:inherit;
     padding:20px;cursor:pointer;
   }
-  #inicio .btn-grande.video{
-    background:var(--panel2);color:var(--text);
-    border:1px solid var(--line);margin-top:10px;
-  }
   #inicio .btn-galeria{
     margin-top:10px;width:100%;
     border:1px solid var(--line);border-radius:14px;
@@ -78,19 +74,6 @@
     color:var(--accent);font-size:13px;font-weight:700;
     text-align:center;display:none;line-height:1.3;
   }
-  .rec-info{
-    position:absolute;left:0;right:0;top:0;
-    padding:10px;background:rgba(0,0,0,0.6);
-    color:#fff;font-size:14px;font-weight:800;
-    text-align:center;display:none;
-    font-family:ui-monospace,Menlo,monospace;
-  }
-  .rec-info .punto{
-    display:inline-block;width:10px;height:10px;border-radius:50%;
-    background:var(--red);margin-right:8px;
-    animation:parp 1s infinite;
-  }
-  @keyframes parp{0%,100%{opacity:1;}50%{opacity:0.2;}}
   .btn-linterna{
     position:absolute;top:52px;right:10px;
     width:46px;height:46px;border-radius:50%;
@@ -127,8 +110,6 @@
     border:5px solid #fff;
     cursor:pointer;flex-shrink:0;
   }
-  .btn-disparo.grabar{background:var(--red);}
-  .btn-disparo.grabando{background:var(--red);border-radius:16px;transform:scale(0.8);}
   .btn-disparo:active{transform:scale(0.93);}
   .btn-cerrar-cam{
     background:var(--panel2);border:1px solid var(--line);
@@ -146,23 +127,13 @@
     background:#000;line-height:0;position:relative;
   }
   #canvas{width:100%;height:auto;display:block;}
-  #vistaVideo{width:100%;display:block;border-radius:14px;border:1px solid var(--line);background:#000;}
   .quitar-media{
     position:absolute;top:8px;right:8px;
     width:38px;height:38px;border-radius:50%;
     background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.35);
     color:#fff;font-size:16px;cursor:pointer;z-index:2;
   }
-  .bloque-media{position:relative;margin-top:10px;display:none;}
-  .bloque-media.visible{display:block;}
-  .fila-agregar{display:flex;gap:8px;margin-top:10px;}
-  .fila-agregar button{
-    flex:1;
-    border:1px solid var(--line);border-radius:12px;
-    background:var(--panel);color:var(--text);
-    font-size:13px;font-weight:700;font-family:inherit;
-    padding:13px 6px;cursor:pointer;
-  }
+  .bloque-media{position:relative;margin-top:0;}
 
   form#datos{margin-top:16px;}
   .campo{margin-bottom:12px;}
@@ -239,7 +210,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto y video · v9</div>
+    <div class="sub">Grandes usuarios · foto · v10</div>
   </div>
 </header>
 
@@ -247,23 +218,18 @@
   <!-- inicio -->
   <div id="inicio">
     <button class="btn-grande" id="btnFotoIni" type="button">📷 &nbsp;Sacar foto</button>
-    <button class="btn-grande video" id="btnVideoIni" type="button">🎥 &nbsp;Grabar video</button>
     <button class="btn-galeria" id="btnGaleria" type="button">🖼️ &nbsp;Elegir foto de la galería</button>
-    <button class="btn-galeria" id="btnVideoGal" type="button">🎞️ &nbsp;Elegir video de la galería</button>
-    <p class="nota">El video se graba adentro de la app (máx. 60 segundos) y se manda
-    junto con la foto sellada. Los datos van estampados en la foto.</p>
+    <p class="nota">La cámara funciona adentro de la app, sin cambiar de aplicación,
+    así el teléfono no cierra nada. Los datos van estampados en la foto.</p>
   </div>
   <input type="file" id="inputFoto" accept="image/*">
-  <input type="file" id="inputVideo" accept="video/*" capture="camcorder" style="display:none">
-  <input type="file" id="inputVideoGal" accept="video/*" style="display:none">
 
-  <!-- camara / video / escaner -->
+  <!-- camara / escaner -->
   <div id="camara">
     <div class="video-frame">
       <video id="video" autoplay playsinline muted></video>
       <div class="foco-ring" id="focoRing"></div>
       <div class="scan-hint" id="scanHint">Apuntá al código de barras</div>
-      <div class="rec-info" id="recInfo"><span class="punto"></span><span id="recTiempo">00:00</span> / 01:00</div>
       <button type="button" class="btn-linterna" id="btnLinterna">🔦</button>
       <div class="zoom-ctl" id="zoomCtl">
         <span>−</span><input type="range" id="zoomSlider"><span>+</span>
@@ -282,17 +248,6 @@
         <canvas id="canvas"></canvas>
         <button type="button" class="quitar-media" id="btnQuitarFoto">✕</button>
       </div>
-    </div>
-
-    <div class="bloque-media" id="bloqueVideo">
-      <video id="vistaVideo" controls playsinline></video>
-      <button type="button" class="quitar-media" id="btnQuitarVideo">✕</button>
-    </div>
-
-    <div class="fila-agregar">
-      <button type="button" id="btnMasFoto">📷 ＋ Foto</button>
-      <button type="button" id="btnMasVideo">🎥 ＋ Video</button>
-      <button type="button" id="btnMasVideoGal">🎞️ Galería</button>
     </div>
 
     <form id="datos" onsubmit="return false;">
@@ -373,9 +328,7 @@
   var edicion     = document.getElementById('edicion');
   var inputFoto   = document.getElementById('inputFoto');
   var canvas      = document.getElementById('canvas');
-  var vistaVideo  = document.getElementById('vistaVideo');
   var bloqueFoto  = document.getElementById('bloqueFoto');
-  var bloqueVideo = document.getElementById('bloqueVideo');
   var inpZona     = document.getElementById('zona');
   var inpMedidor  = document.getElementById('medidor');
   var inpCliente  = document.getElementById('cliente');
@@ -385,8 +338,6 @@
   var acciones    = document.getElementById('acciones');
   var aviso       = document.getElementById('aviso');
   var scanHint    = document.getElementById('scanHint');
-  var recInfo     = document.getElementById('recInfo');
-  var recTiempo   = document.getElementById('recTiempo');
   var btnLinterna = document.getElementById('btnLinterna');
   var zoomCtl     = document.getElementById('zoomCtl');
   var zoomSlider  = document.getElementById('zoomSlider');
@@ -394,16 +345,8 @@
   var btnDisparo  = document.getElementById('btnDisparo');
   var btnCerrarCam= document.getElementById('btnCerrarCam');
   var btnFotoIni  = document.getElementById('btnFotoIni');
-  var btnVideoIni = document.getElementById('btnVideoIni');
   var btnGaleria  = document.getElementById('btnGaleria');
-  var btnVideoGal = document.getElementById('btnVideoGal');
-  var inputVideo  = document.getElementById('inputVideo');
-  var inputVideoGal = document.getElementById('inputVideoGal');
-  var btnMasVideoGal = document.getElementById('btnMasVideoGal');
-  var btnMasFoto  = document.getElementById('btnMasFoto');
-  var btnMasVideo = document.getElementById('btnMasVideo');
   var btnQuitarFoto  = document.getElementById('btnQuitarFoto');
-  var btnQuitarVideo = document.getElementById('btnQuitarVideo');
   var btnScanMed  = document.getElementById('btnScanMed');
   var btnScanCli  = document.getElementById('btnScanCli');
   var btnCompartir= document.getElementById('btnCompartir');
@@ -411,20 +354,15 @@
 
   var CLAVE_MEM = 'dpec_gu_campo';
   var MAX_LADO  = 1600;
-  var MAX_SEG   = 60;
 
   var fotoOff = null;        // canvas con la foto (sin sello)
   var fotoBlob = null;       // JPG sellado pre-armado
-  var videoBlob = null;      // video grabado
-  var videoExt = 'mp4';
-  var videoURL = null;
   var fechaNov = null;
   var gps = null;
 
   var stream = null, track = null, torchOn = false;
-  var modoCamara = 'foto';   // 'foto' | 'video' | 'scan'
+  var modoCamara = 'foto';   // 'foto' | 'scan'
   var scanTimer = null, detector = null, scanDestino = null;
-  var grabador = null, trozos = [], recTimer = null, recInicio = 0;
   var timerRender = null;
   var zoomMin = 1, zoomMax = 1, baseDist = 0, baseZoom = 1;
 
@@ -463,65 +401,15 @@
     edicion.classList.toggle('visible', cual === 'edicion');
     acciones.classList.toggle('visible', cual === 'edicion');
   }
-  function hayMedios(){ return !!(fotoOff || videoBlob); }
+  function hayMedios(){ return !!fotoOff; }
   function irEdicion(){
     ocultarAviso();
-    bloqueFoto.classList.toggle('visible', !!fotoOff);
-    bloqueVideo.classList.toggle('visible', !!videoBlob);
-    btnMasFoto.style.display = fotoOff ? 'none' : '';
-    btnMasVideo.style.display = videoBlob ? 'none' : '';
-    btnMasVideoGal.style.display = videoBlob ? 'none' : '';
     mostrarPantalla('edicion');
   }
 
   // ================= camara =================
   btnFotoIni.addEventListener('click', function(){ abrirCamara('foto'); });
-  btnVideoIni.addEventListener('click', pedirVideo);
-  btnMasFoto.addEventListener('click', function(){ abrirCamara('foto'); });
-  btnMasVideo.addEventListener('click', pedirVideo);
   btnGaleria.addEventListener('click', function(){ inputFoto.click(); });
-  btnVideoGal.addEventListener('click', function(){ inputVideoGal.click(); });
-  btnMasVideoGal.addEventListener('click', function(){ inputVideoGal.click(); });
-
-  function pedirVideo(){
-    // Si el navegador puede grabar MP4 (el formato que WhatsApp reproduce
-    // directo), grabamos adentro de la app. Si solo sabe WebM, usamos la
-    // cámara nativa del teléfono, que graba MP4 siempre.
-    var mime = mimeVideo();
-    if(mime.indexOf('mp4') !== -1){
-      abrirCamara('video');
-    } else {
-      guardarCampos();
-      inputVideo.click();
-    }
-  }
-
-  function cargarVideoArchivo(file){
-    if(!file) return;
-    videoBlob = file;
-    var nom = (file.name || '').toLowerCase();
-    if(file.type.indexOf('mp4') !== -1 || nom.indexOf('.mp4') !== -1) videoExt = 'mp4';
-    else if(file.type.indexOf('3gp') !== -1 || nom.indexOf('.3gp') !== -1) videoExt = '3gp';
-    else if(file.type.indexOf('webm') !== -1 || nom.indexOf('.webm') !== -1) videoExt = 'webm';
-    else videoExt = 'mp4';
-    if(videoURL) URL.revokeObjectURL(videoURL);
-    videoURL = URL.createObjectURL(videoBlob);
-    vistaVideo.src = videoURL;
-    if(!fechaNov) fechaNov = new Date();
-    if(chkGps.checked) pedirGps();
-    var mb = Math.round(file.size / 1048576);
-    if(mb > 60) mostrarAviso('Ojo: el video pesa ' + mb + ' MB — puede tardar en mandarse por WhatsApp. Conviene grabar más corto.');
-    render();
-    irEdicion();
-  }
-  inputVideo.addEventListener('change', function(){
-    cargarVideoArchivo(inputVideo.files && inputVideo.files[0]);
-    inputVideo.value = '';
-  });
-  inputVideoGal.addEventListener('change', function(){
-    cargarVideoArchivo(inputVideoGal.files && inputVideoGal.files[0]);
-    inputVideoGal.value = '';
-  });
 
   function abrirCamara(modo){
     ocultarAviso();
@@ -530,23 +418,16 @@
       mostrarAviso('Este navegador no permite la cámara en vivo.');
       return;
     }
-    var quiereAudio = (modo === 'video');
-    var resVideo = (modo === 'video')
-      ? { facingMode:'environment', width:{ideal:1280}, height:{ideal:1280}, frameRate:{ideal:24} }
-      : { facingMode:'environment', width:{ideal:1920}, height:{ideal:1920} };
     navigator.mediaDevices.getUserMedia({
-      video: resVideo,
-      audio: quiereAudio
+      video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1920} },
+      audio: false
     }).then(function(s){
       stream = s;
       video.srcObject = s;
       video.muted = true;
       var esScan = (modo === 'scan');
       scanHint.style.display = esScan ? 'block' : 'none';
-      recInfo.style.display = 'none';
       btnDisparo.style.display = esScan ? 'none' : '';
-      btnDisparo.classList.toggle('grabar', modo === 'video');
-      btnDisparo.classList.remove('grabando');
       mostrarPantalla('camara');
       setTimeout(configurarControles, 500);
       if(esScan) iniciarDeteccion();
@@ -554,7 +435,7 @@
       if(location.protocol === 'file:')
         mostrarAviso('La cámara solo funciona abriendo la app desde el link https (GitHub Pages).');
       else if(err && err.name === 'NotAllowedError')
-        mostrarAviso('El navegador no dio permiso de cámara' + (quiereAudio ? '/micrófono' : '') + '. Revisá los permisos del sitio.');
+        mostrarAviso('El navegador no dio permiso de cámara. Revisá los permisos del sitio.');
       else
         mostrarAviso('No se pudo abrir la cámara (' + (err && err.name ? err.name : 'error') + ').');
     });
@@ -562,14 +443,10 @@
 
   function cerrarCamara(){
     clearInterval(scanTimer); scanTimer = null;
-    clearInterval(recTimer); recTimer = null;
-    if(grabador && grabador.state !== 'inactive'){ try{ grabador.stop(); }catch(e){} }
-    grabador = null;
     track = null; torchOn = false;
     btnLinterna.classList.remove('activa');
     btnLinterna.style.display = 'none';
     zoomCtl.style.display = 'none';
-    recInfo.style.display = 'none';
     if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
     video.srcObject = null;
   }
@@ -579,14 +456,8 @@
     if(hayMedios()) irEdicion(); else mostrarPantalla('inicio');
   });
 
-  // ================= disparo: foto o video =================
-  btnDisparo.addEventListener('click', function(){
-    if(modoCamara === 'foto') sacarFoto();
-    else if(modoCamara === 'video'){
-      if(grabador && grabador.state === 'recording') detenerGrabacion();
-      else iniciarGrabacion();
-    }
-  });
+  // ================= disparo =================
+  btnDisparo.addEventListener('click', sacarFoto);
 
   function sacarFoto(){
     if(!stream) return;
@@ -603,68 +474,6 @@
     render();
     prepararBlobFoto();
     irEdicion();
-  }
-
-  function mimeLimpio(m){
-    return (m || 'video/mp4').split(';')[0].trim() || 'video/mp4';
-  }
-
-  function mimeVideo(){
-    var ops = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-    if(!window.MediaRecorder) return '';
-    for(var i=0;i<ops.length;i++){
-      try{ if(MediaRecorder.isTypeSupported(ops[i])) return ops[i]; }catch(e){}
-    }
-    return '';
-  }
-
-  function iniciarGrabacion(){
-    if(!stream) return;
-    var mime = mimeVideo();
-    if(!mime && !window.MediaRecorder){
-      mostrarAviso('Este navegador no puede grabar video. Grabalo con la cámara del teléfono y mandalo directo al grupo.');
-      return;
-    }
-    trozos = [];
-    try{
-      grabador = mime
-        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1500000 })
-        : new MediaRecorder(stream);
-    }catch(e){
-      mostrarAviso('No se pudo iniciar la grabación (' + e.name + ').');
-      return;
-    }
-    videoExt = (grabador.mimeType || mime || '').indexOf('mp4') !== -1 ? 'mp4' : 'webm';
-    grabador.ondataavailable = function(ev){ if(ev.data && ev.data.size) trozos.push(ev.data); };
-    grabador.onstop = function(){
-      videoBlob = new Blob(trozos, { type: mimeLimpio((grabador && grabador.mimeType) || ('video/' + videoExt)) });
-      trozos = [];
-      if(videoURL) URL.revokeObjectURL(videoURL);
-      videoURL = URL.createObjectURL(videoBlob);
-      vistaVideo.src = videoURL;
-      if(!fechaNov) fechaNov = new Date();
-      cerrarCamara();
-      if(chkGps.checked) pedirGps();
-      render();
-      irEdicion();
-    };
-    grabador.start();
-    recInicio = Date.now();
-    recInfo.style.display = 'block';
-    btnDisparo.classList.add('grabando');
-    recTimer = setInterval(function(){
-      var seg = Math.floor((Date.now() - recInicio) / 1000);
-      function p(n){ return (n<10?'0':'')+n; }
-      recTiempo.textContent = p(Math.floor(seg/60)) + ':' + p(seg%60);
-      if(seg >= MAX_SEG) detenerGrabacion();
-    }, 250);
-  }
-
-  function detenerGrabacion(){
-    clearInterval(recTimer); recTimer = null;
-    if(grabador && grabador.state === 'recording'){
-      try{ grabador.stop(); }catch(e){}
-    }
   }
 
   // ================= galeria =================
@@ -691,16 +500,10 @@
     img.src = url;
   });
 
-  // ================= quitar medios =================
+  // ================= quitar foto =================
   btnQuitarFoto.addEventListener('click', function(){
     fotoOff = null; fotoBlob = null;
-    if(hayMedios()) irEdicion(); else { mostrarPantalla('inicio'); }
-  });
-  btnQuitarVideo.addEventListener('click', function(){
-    videoBlob = null;
-    if(videoURL){ URL.revokeObjectURL(videoURL); videoURL = null; }
-    vistaVideo.removeAttribute('src');
-    if(hayMedios()) irEdicion(); else { mostrarPantalla('inicio'); }
+    mostrarPantalla('inicio');
   });
 
   // ================= controles de camara =================
@@ -928,59 +731,44 @@
 
   // ================= compartir =================
   btnCompartir.addEventListener('click', function(){
-    if(!hayMedios()){ mostrarAviso('Primero sacá una foto o grabá un video.'); return; }
+    if(!hayMedios()){ mostrarAviso('Primero sacá una foto.'); return; }
     btnCompartir.disabled = true;
     btnCompartir.textContent = 'Preparando…';
 
     function continuar(fb){
       btnCompartir.disabled = false;
       btnCompartir.textContent = 'Compartir ➤ WhatsApp';
+      if(!fb){ mostrarAviso('No se pudo generar la imagen.'); return; }
       var base = 'gu';
       if(inpZona.value.trim()) base += '_zona' + inpZona.value.trim();
       if(inpMedidor.value.trim()) base += '_med' + inpMedidor.value.trim();
-      var files = [];
-      if(fb) files.push(new File([fb], base + '.jpg', { type:'image/jpeg' }));
-      if(videoBlob) files.push(new File([videoBlob], base + '.' + videoExt, { type: mimeLimpio(videoBlob.type || ('video/' + videoExt)) }));
-      if(!files.length){ mostrarAviso('No se pudo preparar el material.'); return; }
+      var file = new File([fb], base + '.jpg', { type:'image/jpeg' });
       var texto = armarTexto();
 
-      function intentar(fs, resto){
-        navigator.share({ files: fs, text: texto })
-          .then(function(){
-            borrarCampos();
-            if(resto && resto.length){
-              descargarTodo(resto);
-              mostrarAviso('El teléfono no dejó mandar todo junto: fue ' + fs.length + ' archivo(s) por WhatsApp y el resto se descargó — adjuntalo en el chat desde la galería.');
-            }
-          })
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        navigator.share({ files:[file], text: texto })
+          .then(function(){ borrarCampos(); })
           .catch(function(err){
-            if(err && err.name !== 'AbortError'){
-              descargarTodo(files);
-              var det = (err && err.name ? err.name : '?') + (err && err.message ? ' — ' + String(err.message).slice(0,120) : '');
-              mostrarAviso('No se pudo compartir directo. Motivo: ' + det + '. Se descargó el material — mandalo desde WhatsApp y pasale este motivo a Pablo.');
-            }
+            if(err && err.name !== 'AbortError') descargar(fb, file.name);
           });
-      }
-
-      // La foto lleva el sello con todos los datos: si el teléfono no deja
-      // mandar foto+video juntos, priorizamos la foto y el video se descarga aparte.
-      if(navigator.canShare && navigator.canShare({ files: files })){
-        intentar(files, []);
-      } else if(files.length > 1 && navigator.canShare && navigator.canShare({ files: [files[0]] })){
-        intentar([files[0]], files.slice(1));
-      } else if(navigator.canShare && navigator.canShare({ files: [files[files.length-1]] })){
-        intentar([files[files.length-1]], files.slice(0, files.length-1));
       } else {
-        descargarTodo(files);
-        var soporta = navigator.canShare ? 'canShare rechazó los archivos' : 'el navegador no tiene canShare';
-        mostrarAviso('Este teléfono no acepta compartir estos archivos directo (' + soporta + '). Se descargaron — mandalos al grupo desde WhatsApp.');
+        descargar(fb, file.name);
+        mostrarAviso('Este navegador no puede compartir directo. Se descargó la foto sellada — mandala al grupo desde WhatsApp.');
       }
     }
 
-    if(!fotoOff){ continuar(null); }
-    else if(fotoBlob){ continuar(fotoBlob); }
-    else { render(); canvas.toBlob(continuar, 'image/jpeg', 0.88); }
+    if(fotoBlob){ continuar(fotoBlob); }
+    else { render(); canvas.toBlob(continuar, 'image/jpeg', 0.80); }
   });
+
+  function descargar(blob, nombre){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
 
   function armarTexto(){
     var t = [];
@@ -992,22 +780,9 @@
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
   }
 
-  function descargarTodo(files){
-    files.forEach(function(f){
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(f);
-      a.download = f.name;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
-    });
-  }
-
   // ================= nuevo =================
   btnNueva.addEventListener('click', function(){
-    fotoOff = null; fotoBlob = null; videoBlob = null;
-    if(videoURL){ URL.revokeObjectURL(videoURL); videoURL = null; }
-    vistaVideo.removeAttribute('src');
+    fotoOff = null; fotoBlob = null;
     inpMedidor.value = ''; inpCliente.value = '';
     txtDesc.value = '';
     fechaNov = null;
