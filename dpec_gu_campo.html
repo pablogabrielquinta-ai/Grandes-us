@@ -210,7 +210,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto · v10</div>
+    <div class="sub">Grandes usuarios · foto · v11</div>
   </div>
 </header>
 
@@ -292,14 +292,6 @@
       </div>
 
       <div class="campo">
-        <label for="cliente">N° de cliente (opcional)</label>
-        <div class="fila-scan">
-          <input type="text" id="cliente" inputmode="numeric" placeholder="Escanealo o escribilo">
-          <button type="button" id="btnScanCli" class="btn-escanear">|||&nbsp;Escanear</button>
-        </div>
-      </div>
-
-      <div class="campo">
         <label for="descripcion">Novedad / observaciones</label>
         <textarea id="descripcion" placeholder="Ej: Display rotando OK, se registran las pantallas de demanda."></textarea>
       </div>
@@ -331,7 +323,6 @@
   var bloqueFoto  = document.getElementById('bloqueFoto');
   var inpZona     = document.getElementById('zona');
   var inpMedidor  = document.getElementById('medidor');
-  var inpCliente  = document.getElementById('cliente');
   var txtDesc     = document.getElementById('descripcion');
   var chkGps      = document.getElementById('usarGps');
   var gpsEstado   = document.getElementById('gpsEstado');
@@ -348,7 +339,6 @@
   var btnGaleria  = document.getElementById('btnGaleria');
   var btnQuitarFoto  = document.getElementById('btnQuitarFoto');
   var btnScanMed  = document.getElementById('btnScanMed');
-  var btnScanCli  = document.getElementById('btnScanCli');
   var btnCompartir= document.getElementById('btnCompartir');
   var btnNueva    = document.getElementById('btnNueva');
 
@@ -379,7 +369,7 @@
   function guardarCampos(){
     try{
       localStorage.setItem(CLAVE_CAMPOS, JSON.stringify({
-        med: inpMedidor.value, cli: inpCliente.value,
+        med: inpMedidor.value,
         desc: txtDesc.value, t: Date.now()
       }));
     }catch(e){}
@@ -389,7 +379,6 @@
     var c = JSON.parse(localStorage.getItem(CLAVE_CAMPOS) || 'null');
     if(c && (Date.now() - (c.t||0)) < 12*60*60*1000){
       if(c.med)  inpMedidor.value = c.med;
-      if(c.cli)  inpCliente.value = c.cli;
       if(c.desc) txtDesc.value = c.desc;
     }
   }catch(e){}
@@ -577,7 +566,6 @@
 
   // ================= escaner =================
   btnScanMed.addEventListener('click', function(){ pedirEscaneo(inpMedidor, 'Apuntá al código del MEDIDOR'); });
-  btnScanCli.addEventListener('click', function(){ pedirEscaneo(inpCliente, 'Apuntá al código del CLIENTE'); });
   function pedirEscaneo(destino, msg){
     if(!('BarcodeDetector' in window)){
       mostrarAviso('Este navegador no tiene lector de códigos. Escribí el número a mano.');
@@ -628,7 +616,7 @@
 
   // ================= sello =================
   inpZona.addEventListener('change', function(){ guardarMem(); guardarCampos(); pedirRender(); });
-  [inpZona, inpMedidor, inpCliente, txtDesc].forEach(function(el){
+  [inpZona, inpMedidor, txtDesc].forEach(function(el){
     el.addEventListener('input', function(){ guardarMem(); guardarCampos(); pedirRender(); });
   });
   function pedirRender(){
@@ -661,7 +649,6 @@
 
     var zona = inpZona.value.trim();
     var med  = inpMedidor.value.trim();
-    var cli  = inpCliente.value.trim();
     var desc = txtDesc.value.trim();
 
     var pad   = Math.round(w * 0.030);
@@ -675,7 +662,6 @@
 
     var l2 = [];
     if(med) l2.push('MEDIDOR ' + med);
-    if(cli) l2.push('CLIENTE ' + cli);
     l2 = l2.join('  ·  ');
 
     var info = fmtFecha(fechaNov || new Date());
@@ -774,7 +760,6 @@
     var t = [];
     if(inpZona.value.trim()) t.push('GU Zona ' + inpZona.value.trim());
     if(inpMedidor.value.trim()) t.push('Medidor ' + inpMedidor.value.trim());
-    if(inpCliente.value.trim()) t.push('Cliente ' + inpCliente.value.trim());
     var linea = t.join(' · ');
     var desc = txtDesc.value.trim();
     return desc ? (linea ? linea + '\n' + desc : desc) : linea;
@@ -783,7 +768,7 @@
   // ================= nuevo =================
   btnNueva.addEventListener('click', function(){
     fotoOff = null; fotoBlob = null;
-    inpMedidor.value = ''; inpCliente.value = '';
+    inpMedidor.value = '';
     txtDesc.value = '';
     fechaNov = null;
     borrarCampos();

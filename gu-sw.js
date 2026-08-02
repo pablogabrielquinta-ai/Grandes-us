@@ -1,7 +1,7 @@
 /* DPEC GU Campo - service worker
    Estrategia: red primero, caché de respaldo. */
 
-var CACHE = 'dpec-gu-campo-v4';
+var CACHE = 'dpec-gu-campo-v5';
 var ARCHIVOS = [
   './dpec_gu_campo.html',
   './gu-manifest.json',
