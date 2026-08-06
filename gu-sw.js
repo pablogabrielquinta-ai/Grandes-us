@@ -2,7 +2,7 @@
    Estrategia: caché primero (abre al toque), actualiza en segundo
    plano. La próxima vez que se abra ya está la versión nueva. */
 
-var CACHE = 'dpec-gu-campo-v6';
+var CACHE = 'dpec-gu-campo-v8';
 var ARCHIVOS = [
   './dpec_gu_campo.html',
   './gu-manifest.json',
