@@ -50,7 +50,7 @@
     font-size:17px;font-weight:800;font-family:inherit;
     padding:20px;cursor:pointer;
   }
-  #inicio .btn-galeria{
+  .btn-galeria{
     margin-top:10px;width:100%;
     border:1px solid var(--line);border-radius:14px;
     background:var(--panel);color:var(--text);
@@ -210,7 +210,7 @@
   <div class="logo">GU</div>
   <div>
     <h1>GU Campo</h1>
-    <div class="sub">Grandes usuarios · foto · v11</div>
+    <div class="sub">Grandes usuarios · foto · v13</div>
   </div>
 </header>
 
@@ -715,7 +715,14 @@
     canvas.toBlob(function(b){ fotoBlob = b; }, 'image/jpeg', 0.88);
   }
 
-  // ================= compartir =================
+  function nombreBase(){
+    var base = 'gu';
+    if(inpZona.value.trim()) base += '_zona' + inpZona.value.trim();
+    if(inpMedidor.value.trim()) base += '_med' + inpMedidor.value.trim();
+    return base;
+  }
+
+  // ================= compartir (guarda copia local siempre, de paso) =================
   btnCompartir.addEventListener('click', function(){
     if(!hayMedios()){ mostrarAviso('Primero sacá una foto.'); return; }
     btnCompartir.disabled = true;
@@ -725,21 +732,20 @@
       btnCompartir.disabled = false;
       btnCompartir.textContent = 'Compartir ➤ WhatsApp';
       if(!fb){ mostrarAviso('No se pudo generar la imagen.'); return; }
-      var base = 'gu';
-      if(inpZona.value.trim()) base += '_zona' + inpZona.value.trim();
-      if(inpMedidor.value.trim()) base += '_med' + inpMedidor.value.trim();
-      var file = new File([fb], base + '.jpg', { type:'image/jpeg' });
+      var file = new File([fb], nombreBase() + '.jpg', { type:'image/jpeg' });
       var texto = armarTexto();
+
+      // Guardamos siempre una copia en el teléfono, además de compartir.
+      // Así queda respaldada aunque no se termine de mandar por WhatsApp,
+      // y si tenés la copia de seguridad de Google Fotos activada, se sube sola.
+      descargar(fb, file.name);
 
       if(navigator.canShare && navigator.canShare({ files:[file] })){
         navigator.share({ files:[file], text: texto })
           .then(function(){ borrarCampos(); })
-          .catch(function(err){
-            if(err && err.name !== 'AbortError') descargar(fb, file.name);
-          });
+          .catch(function(){ /* ya quedó guardada la copia, no hace falta nada más */ });
       } else {
-        descargar(fb, file.name);
-        mostrarAviso('Este navegador no puede compartir directo. Se descargó la foto sellada — mandala al grupo desde WhatsApp.');
+        mostrarAviso('Foto guardada en el teléfono. Este navegador no puede abrir el menú de compartir directo — adjuntala desde la galería.');
       }
     }
 
