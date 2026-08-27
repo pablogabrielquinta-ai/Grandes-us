@@ -1,15 +1,23 @@
-var CACHE_NAME = "dpec-gu-t1-v1";
-var FILES_TO_CACHE = [
-  "./dpec_gu_t1-1.html",
-  "./gu-icon-192.png",
-  "./gu-icon-512.png"
+var CACHE_NAME = "dpec-gu-t1-v2";
+var APP_FILES = [
+  "dpec_gu_t1-1.html",
+  "t1-manifest.json",
+  "gu-icon-192.png",
+  "gu-icon-512.png"
 ];
+
+function isOwnFile(url) {
+  for (var i = 0; i < APP_FILES.length; i++) {
+    if (url.indexOf(APP_FILES[i]) !== -1) return true;
+  }
+  return false;
+}
 
 self.addEventListener("install", function (event) {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(FILES_TO_CACHE);
+      return cache.addAll(APP_FILES.map(function (f) { return "./" + f; }));
     })
   );
 });
@@ -26,7 +34,14 @@ self.addEventListener("activate", function (event) {
   self.clients.claim();
 });
 
+// IMPORTANTE: solo respondemos desde cache para los archivos propios de
+// esta app. Cualquier otra request (de otra herramienta del mismo sitio,
+// una imagen tomada con la camara, etc.) la dejamos pasar sin tocar.
 self.addEventListener("fetch", function (event) {
+  var url = event.request.url;
+  if (!isOwnFile(url)) {
+    return; // no interceptar: deja que el navegador maneje la request normal
+  }
   event.respondWith(
     caches.match(event.request).then(function (cached) {
       return cached || fetch(event.request);
