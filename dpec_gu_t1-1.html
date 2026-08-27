@@ -294,23 +294,26 @@
           </span>
         </div>
         <div class="cambio-extra" id="cambioExtra" style="display:none;">
-          <div class="field">
+          <div class="field" style="margin-bottom:0;">
             <label>N&deg; de medidor anterior</label>
             <input type="text" id="fMedidorAnterior" placeholder="Medidor que se retir&oacute;" inputmode="numeric">
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label>Foto del medidor anterior</label>
-            <div id="photoAreaOld"></div>
-            <input type="file" id="photoInputOld" accept="image/*" capture="environment" style="display:none;">
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="field" style="margin-bottom:0;">
-          <label>Foto del medidor</label>
-          <div id="photoArea"></div>
-          <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none;">
+        <div class="toggle-row">
+          <label for="fAlta">&#128736; Alta de medidor</label>
+          <span class="switch">
+            <input type="checkbox" id="fAlta">
+            <span class="switch-track"></span>
+          </span>
+        </div>
+        <div class="cambio-extra" id="altaExtra" style="display:none;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Tipo de medidor</label>
+            <input type="text" id="fTipoMedidor" placeholder="Ej: Monof&aacute;sico, Trif&aacute;sico, Electr&oacute;nico...">
+          </div>
         </div>
       </div>
 
@@ -397,11 +400,10 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
   var currentUser = null;
   var currentFilter = "todos";
   var currentEstado = "";
-  var currentFotoData = null;
   var currentGps = null; // { lat, lon, acc }
   var gpsWatching = false;
   var currentCambio = false;
-  var currentFotoOldData = null;
+  var currentAlta = false;
   var allUsersFlat = []; // flat list of every usuario, for global meter search
 
   var ESTADOS = ["Correcto", "Roto / Da\u00f1ado", "Inaccesible", "Retirado", "Sin acceso al domicilio", "Otro"];
@@ -584,7 +586,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       shown++;
       var item = document.createElement("div");
       item.className = "u-item";
-      var metaExtra = isDone ? (" \u00b7 Med. " + (rec.medidor || "-") + " \u00b7 Lect. " + (rec.lectura || "-") + " \u00b7 " + (rec.estado || "-") + (rec.cambioMedidor ? " \u00b7 \ud83d\udd04 cambio" : "")) : (u.medEsperado ? (" \u00b7 Med. " + u.medEsperado) : "");
+      var metaExtra = isDone ? (" \u00b7 Med. " + (rec.medidor || "-") + " \u00b7 Lect. " + (rec.lectura || "-") + " \u00b7 " + (rec.estado || "-") + (rec.cambioMedidor ? " \u00b7 \ud83d\udd04 cambio" : "") + (rec.altaMedidor ? " \u00b7 \ud83d\udd27 alta" : "")) : (u.medEsperado ? (" \u00b7 Med. " + u.medEsperado) : "");
       item.innerHTML =
         '<div class="u-status-dot ' + (isDone ? "done" : "pending") + '"></div>' +
         '<div class="u-body">' +
@@ -613,16 +615,16 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     document.getElementById("fMedidor").value = rec ? (rec.medidor || "") : (u.medEsperado || "");
     document.getElementById("fLectura").value = rec ? (rec.lectura || "") : "";
     currentEstado = rec ? (rec.estado || "") : "";
-    currentFotoData = rec ? (rec.foto || null) : null;
     currentGps = (rec && rec.lat != null) ? { lat: rec.lat, lon: rec.lon, acc: rec.gpsAcc } : null;
     currentCambio = rec ? !!rec.cambioMedidor : false;
-    currentFotoOldData = rec ? (rec.fotoAnterior || null) : null;
+    currentAlta = rec ? !!rec.altaMedidor : false;
     document.getElementById("fMedidorAnterior").value = rec ? (rec.medidorAnterior || "") : "";
     document.getElementById("fCambio").checked = currentCambio;
+    document.getElementById("fTipoMedidor").value = rec ? (rec.tipoMedidor || "") : "";
+    document.getElementById("fAlta").checked = currentAlta;
     renderCambioExtra();
-    renderPhotoAreaOld();
+    renderAltaExtra();
     renderEstadoGrid();
-    renderPhotoArea();
     captureGpsSilently();
     showScreen("screenDetalle");
   }
@@ -645,56 +647,12 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     }
   }
 
-  function renderPhotoArea() {
-    var area = document.getElementById("photoArea");
-    if (currentFotoData) {
-      area.innerHTML =
-        '<img class="photo-preview" src="' + currentFotoData + '">' +
-        '<div class="photo-btns">' +
-          '<button class="btn-mini" id="btnRetomar">Retomar foto</button>' +
-          '<button class="btn-mini" id="btnQuitarFoto">Quitar foto</button>' +
-        '</div>';
-      document.getElementById("btnRetomar").addEventListener("click", triggerPhoto);
-      document.getElementById("btnQuitarFoto").addEventListener("click", function () {
-        currentFotoData = null;
-        renderPhotoArea();
-      });
-    } else {
-      area.innerHTML = '<div class="photo-box" id="photoBoxTap">&#128247; Tocar para sacar foto del medidor</div>';
-      document.getElementById("photoBoxTap").addEventListener("click", triggerPhoto);
-    }
-  }
-
   function renderCambioExtra() {
     document.getElementById("cambioExtra").style.display = currentCambio ? "block" : "none";
   }
 
-  function renderPhotoAreaOld() {
-    var area = document.getElementById("photoAreaOld");
-    if (currentFotoOldData) {
-      area.innerHTML =
-        '<img class="photo-preview" src="' + currentFotoOldData + '">' +
-        '<div class="photo-btns">' +
-          '<button class="btn-mini" id="btnRetomarOld">Retomar foto</button>' +
-          '<button class="btn-mini" id="btnQuitarFotoOld">Quitar foto</button>' +
-        '</div>';
-      document.getElementById("btnRetomarOld").addEventListener("click", function () {
-        document.getElementById("photoInputOld").click();
-      });
-      document.getElementById("btnQuitarFotoOld").addEventListener("click", function () {
-        currentFotoOldData = null;
-        renderPhotoAreaOld();
-      });
-    } else {
-      area.innerHTML = '<div class="photo-box" id="photoBoxTapOld">&#128247; Tocar para sacar foto del medidor anterior</div>';
-      document.getElementById("photoBoxTapOld").addEventListener("click", function () {
-        document.getElementById("photoInputOld").click();
-      });
-    }
-  }
-
-  function triggerPhoto() {
-    document.getElementById("photoInput").click();
+  function renderAltaExtra() {
+    document.getElementById("altaExtra").style.display = currentAlta ? "block" : "none";
   }
 
   function captureGpsSilently() {
@@ -715,27 +673,6 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
-  }
-
-  function handlePhotoFile(file, onDone) {
-    var reader = new FileReader();
-    reader.onload = function (ev) {
-      var img = new Image();
-      img.onload = function () {
-        var maxW = 1000;
-        var scale = Math.min(1, maxW / img.width);
-        var w = Math.round(img.width * scale);
-        var h = Math.round(img.height * scale);
-        var canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        onDone(canvas.toDataURL("image/jpeg", 0.72));
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
   }
 
   function guardarRegistro() {
@@ -766,11 +703,11 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       estado: currentEstado,
       cambioMedidor: currentCambio,
       medidorAnterior: currentCambio ? document.getElementById("fMedidorAnterior").value.replace(/\s+/g, "") : "",
-      fotoAnterior: currentCambio ? (currentFotoOldData || "") : "",
+      altaMedidor: currentAlta,
+      tipoMedidor: currentAlta ? document.getElementById("fTipoMedidor").value.trim() : "",
       lat: currentGps ? currentGps.lat : null,
       lon: currentGps ? currentGps.lon : null,
       gpsAcc: currentGps ? currentGps.acc : null,
-      foto: currentFotoData || "",
       fecha: new Date().toISOString()
     };
     records[rec.id] = rec;
@@ -812,7 +749,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       alert("Todav\u00eda no hay registros cargados.");
       return;
     }
-    var header = ["Zona", "IC", "Usuario", "Domicilio", "Tarifa", "Medidor", "Lectura", "Estado", "CambioMedidor", "MedidorAnterior", "Latitud", "Longitud", "PrecisionGPS_m", "Fecha", "TieneFoto", "TieneFotoAnterior"];
+    var header = ["Zona", "IC", "Usuario", "Domicilio", "Tarifa", "Medidor", "Lectura", "Estado", "CambioMedidor", "MedidorAnterior", "AltaMedidor", "TipoMedidor", "Latitud", "Longitud", "PrecisionGPS_m", "Fecha"];
     var lines = [header.join(";")];
     keys.sort(function (a, b) {
       var ra = records[a], rb = records[b];
@@ -825,7 +762,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       var lat = (r.lat != null) ? r.lat.toFixed(6) : "";
       var lon = (r.lon != null) ? r.lon.toFixed(6) : "";
       var acc = (r.gpsAcc != null) ? Math.round(r.gpsAcc) : "";
-      var row = [r.zona, r.ic, r.usuario, r.domicilio, r.tipo || "", r.medidor, r.lectura, r.estado, (r.cambioMedidor ? "SI" : "NO"), (r.medidorAnterior || ""), lat, lon, acc, fecha, (r.foto ? "SI" : "NO"), (r.fotoAnterior ? "SI" : "NO")];
+      var row = [r.zona, r.ic, r.usuario, r.domicilio, r.tipo || "", r.medidor, r.lectura, r.estado, (r.cambioMedidor ? "SI" : "NO"), (r.medidorAnterior || ""), (r.altaMedidor ? "SI" : "NO"), (r.tipoMedidor || ""), lat, lon, acc, fecha];
       lines.push(row.map(csvEscape).join(";"));
     }
     var csv = "\uFEFF" + lines.join("\r\n");
@@ -841,38 +778,6 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
     toast("CSV exportado (" + keys.length + " registros)");
-
-    exportFotos();
-  }
-
-  function exportFotos() {
-    var keys = Object.keys(records);
-    var lista = [];
-    for (var i = 0; i < keys.length; i++) {
-      var r = records[keys[i]];
-      if (r.foto) lista.push({ rec: r, data: r.foto, tag: "" });
-      if (r.fotoAnterior) lista.push({ rec: r, data: r.fotoAnterior, tag: "_anterior" });
-    }
-    if (lista.length === 0) return;
-    var idx = 0;
-    function next() {
-      if (idx >= lista.length) return;
-      var item = lista[idx];
-      var r = item.rec;
-      var a = document.createElement("a");
-      a.href = item.data;
-      var safeIc = String(r.ic).replace(/[^a-zA-Z0-9]/g, "");
-      var safeZona = String(r.zona).replace(/[^a-zA-Z0-9]/g, "_");
-      a.download = "foto_" + safeZona + "_" + safeIc + item.tag + ".jpg";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      idx++;
-      setTimeout(next, 350);
-    }
-    if (confirm("Tambi\u00e9n hay " + lista.length + " foto(s) cargadas. \u00bfDescargarlas ahora?")) {
-      next();
-    }
   }
 
   /* ============ Export PDF ============ */
@@ -952,7 +857,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
         var infoLines = [
           "IC " + u.ic + "   -   " + u.domicilio,
           "Tarifa: " + (u.tipo || "-") + "   -   Medidor: " + (rec.medidor || "-") + "   -   Lectura: " + (rec.lectura || "-"),
-          "Estado: " + (rec.estado || "-") + (rec.cambioMedidor ? ("   -   Cambio de medidor (anterior: " + (rec.medidorAnterior || "-") + ")") : "")
+          "Estado: " + (rec.estado || "-") + (rec.cambioMedidor ? ("   -   Cambio de medidor (anterior: " + (rec.medidorAnterior || "-") + ")") : "") + (rec.altaMedidor ? ("   -   Alta de medidor (tipo: " + (rec.tipoMedidor || "-") + ")") : "")
         ];
         if (rec.lat != null) {
           infoLines.push("GPS: " + rec.lat.toFixed(6) + ", " + rec.lon.toFixed(6));
@@ -963,45 +868,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
           doc.text(infoLines[il], margin, yRef.y);
           yRef.y += 4.6;
         }
-        yRef.y += 1;
-
-        var imgW = 62;
-        if (rec.foto) {
-          try {
-            var props = doc.getImageProperties(rec.foto);
-            var imgH = imgW * props.height / props.width;
-            pdfEnsureSpace(doc, yRef, imgH + 4, margin, pageH);
-            doc.addImage(rec.foto, "JPEG", margin, yRef.y, imgW, imgH);
-            if (rec.fotoAnterior) {
-              try {
-                var props2 = doc.getImageProperties(rec.fotoAnterior);
-                var imgH2 = imgW * props2.height / props2.width;
-                doc.setFontSize(8);
-                doc.text("Medidor anterior", margin + imgW + 6, yRef.y + 3);
-                doc.addImage(rec.fotoAnterior, "JPEG", margin + imgW + 6, yRef.y + 5, imgW, imgH2);
-                yRef.y += Math.max(imgH, imgH2 + 5) + 5;
-              } catch (e2) {
-                yRef.y += imgH + 5;
-              }
-            } else {
-              yRef.y += imgH + 5;
-            }
-          } catch (e) {
-            yRef.y += 2;
-          }
-        } else if (rec.fotoAnterior) {
-          try {
-            var props3 = doc.getImageProperties(rec.fotoAnterior);
-            var imgH3 = imgW * props3.height / props3.width;
-            pdfEnsureSpace(doc, yRef, imgH3 + 4, margin, pageH);
-            doc.setFontSize(8);
-            doc.text("Medidor anterior", margin, yRef.y + 3);
-            doc.addImage(rec.fotoAnterior, "JPEG", margin, yRef.y + 5, imgW, imgH3);
-            yRef.y += imgH3 + 9;
-          } catch (e3) {
-            yRef.y += 2;
-          }
-        }
+        yRef.y += 2;
 
         pdfEnsureSpace(doc, yRef, 4, margin, pageH);
         doc.setDrawColor(200, 200, 200);
@@ -1099,30 +966,14 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       }
     });
 
-    document.getElementById("photoInput").addEventListener("change", function (e) {
-      if (e.target.files && e.target.files[0]) {
-        handlePhotoFile(e.target.files[0], function (dataUrl) {
-          currentFotoData = dataUrl;
-          renderPhotoArea();
-        });
-      }
-      this.value = "";
-    });
-
-    document.getElementById("photoInputOld").addEventListener("change", function (e) {
-      if (e.target.files && e.target.files[0]) {
-        handlePhotoFile(e.target.files[0], function (dataUrl) {
-          currentFotoOldData = dataUrl;
-          renderPhotoAreaOld();
-        });
-      }
-      this.value = "";
-    });
-
     document.getElementById("fCambio").addEventListener("change", function () {
       currentCambio = this.checked;
       renderCambioExtra();
-      if (currentCambio) renderPhotoAreaOld();
+    });
+
+    document.getElementById("fAlta").addEventListener("change", function () {
+      currentAlta = this.checked;
+      renderAltaExtra();
     });
 
     document.getElementById("btnGuardar").addEventListener("click", guardarRegistro);
