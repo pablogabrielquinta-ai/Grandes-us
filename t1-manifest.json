@@ -3,7 +3,7 @@
   "short_name": "GU T1",
   "start_url": "./dpec_gu_t1-1.html",
   "scope": "./",
-  "display": "browser",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#14181a",
   "theme_color": "#14181a",
