@@ -68,12 +68,23 @@
   .zona-bar-fill.done { background: #6fae62; }
 
   /* Search */
-  .search-box {
-    display: flex; align-items: center; gap: 8px; background: #1b2120;
-    border: 1px solid #2b332e; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px;
+  .med-search-box {
+    display: flex; align-items: center; gap: 12px; background: #1c2318;
+    border: 2px solid #6fae62; border-radius: 15px; padding: 18px 18px; margin-bottom: 14px;
   }
+  .med-search-box span { font-size: 24px; }
+  .med-search-box input {
+    flex: 1; background: none; border: none; color: #f2efe6; font-size: 22px; font-weight: 700; outline: none;
+  }
+  .med-search-box input::placeholder { color: #7c9f76; font-weight: 600; }
+
+  .search-box {
+    display: flex; align-items: center; gap: 10px; background: #1b2120;
+    border: 1.5px solid #2b332e; border-radius: 13px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .search-box span { font-size: 19px; }
   .search-box input {
-    flex: 1; background: none; border: none; color: #e7e4dc; font-size: 14px; outline: none;
+    flex: 1; background: none; border: none; color: #e7e4dc; font-size: 17px; outline: none;
   }
   .filter-row { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; }
   .filter-chip {
@@ -128,6 +139,24 @@
   .gps-coords { font-size: 13.5px; font-weight: 700; color: #d9edd0; }
   .gps-acc { font-size: 11px; color: #8b968a; margin-top: 3px; }
   .gps-btns { display: flex; gap: 8px; margin-top: 9px; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 2px; margin-bottom: 4px;
+  }
+  .toggle-row label { font-size: 13px; color: #e7e4dc; font-weight: 600; margin: 0; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-track {
+    position: absolute; inset: 0; background: #33403a; border-radius: 20px; transition: background .15s;
+  }
+  .switch-track:before {
+    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px;
+    background: #cfcabb; border-radius: 50%; transition: transform .15s;
+  }
+  .switch input:checked + .switch-track { background: #4a8a45; }
+  .switch input:checked + .switch-track:before { transform: translateX(20px); background: #f2efe6; }
+  .cambio-extra { margin-top: 12px; padding-top: 12px; border-top: 1px solid #262c28; }
 
   .photo-box {
     border: 1.5px dashed #3a4a3d; border-radius: 10px; padding: 14px; text-align: center;
@@ -199,9 +228,9 @@
 
     <!-- SCREEN: Home (zonas) -->
     <div class="screen active" id="screenHome">
-      <div class="search-box">
+      <div class="med-search-box">
         <span>&#128269;</span>
-        <input type="text" id="medSearch" placeholder="Buscar por N&deg; de medidor...">
+        <input type="text" id="medSearch" placeholder="N&deg; de medidor..." inputmode="numeric">
       </div>
       <div id="medSearchResults"></div>
       <div class="search-box" id="zonaSearchBox">
@@ -215,7 +244,7 @@
     <div class="screen" id="screenZona">
       <div class="search-box">
         <span>&#128269;</span>
-        <input type="text" id="userSearch" placeholder="Buscar usuario, IC o domicilio...">
+        <input type="text" id="userSearch" placeholder="Buscar usuario, medidor o domicilio...">
       </div>
       <div class="filter-row">
         <div class="filter-chip active" data-f="todos">Todos</div>
@@ -257,6 +286,27 @@
       </div>
 
       <div class="card">
+        <div class="toggle-row">
+          <label for="fCambio">&#128260; Hubo cambio de medidor</label>
+          <span class="switch">
+            <input type="checkbox" id="fCambio">
+            <span class="switch-track"></span>
+          </span>
+        </div>
+        <div class="cambio-extra" id="cambioExtra" style="display:none;">
+          <div class="field">
+            <label>N&deg; de medidor anterior</label>
+            <input type="text" id="fMedidorAnterior" placeholder="Medidor que se retir&oacute;" inputmode="numeric">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Foto del medidor anterior</label>
+            <div id="photoAreaOld"></div>
+            <input type="file" id="photoInputOld" accept="image/*" style="display:none;">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="field" style="margin-bottom:0;">
           <label>Foto del medidor</label>
           <div id="photoArea"></div>
@@ -274,7 +324,12 @@
 
   <div class="bottombar" id="bottombarHome">
     <button class="btn btn-secondary" id="btnResumen">Resumen</button>
-    <button class="btn btn-primary" id="btnExportar">Exportar CSV</button>
+    <button class="btn btn-secondary" id="btnPdfTodo">PDF</button>
+    <button class="btn btn-primary" id="btnExportar">CSV</button>
+  </div>
+
+  <div class="bottombar" id="bottombarZona" style="display:none;">
+    <button class="btn btn-primary" id="btnPdfZona">Generar PDF de esta zona</button>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -345,6 +400,8 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
   var currentFotoData = null;
   var currentGps = null; // { lat, lon, acc }
   var gpsWatching = false;
+  var currentCambio = false;
+  var currentFotoOldData = null;
   var allUsersFlat = []; // flat list of every usuario, for global meter search
 
   var ESTADOS = ["Correcto", "Roto / Da\u00f1ado", "Inaccesible", "Retirado", "Sin acceso al domicilio", "Otro"];
@@ -379,6 +436,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     for (var i = 0; i < scr.length; i++) scr[i].classList.remove("active");
     document.getElementById(name).classList.add("active");
     document.getElementById("bottombarHome").style.display = (name === "screenHome") ? "flex" : "none";
+    document.getElementById("bottombarZona").style.display = (name === "screenZona") ? "flex" : "none";
     document.getElementById("btnBack").style.display = (name === "screenHome") ? "none" : "block";
     document.getElementById("progressWrap").style.display = (name === "screenZona") ? "block" : "none";
   }
@@ -519,13 +577,14 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       if (currentFilter === "pendiente" && isDone) continue;
       if (currentFilter === "cargado" && !isDone) continue;
       if (q) {
-        var hay = (u.usuario + " " + u.ic + " " + u.domicilio).toUpperCase();
+        var medMatch = (u.medEsperado || "") + " " + (rec ? (rec.medidor || "") : "");
+        var hay = (u.usuario + " " + u.domicilio + " " + medMatch).toUpperCase();
         if (hay.indexOf(q) === -1) continue;
       }
       shown++;
       var item = document.createElement("div");
       item.className = "u-item";
-      var metaExtra = isDone ? (" \u00b7 Med. " + (rec.medidor || "-") + " \u00b7 Lect. " + (rec.lectura || "-") + " \u00b7 " + (rec.estado || "-")) : (u.medEsperado ? (" \u00b7 Med. " + u.medEsperado) : "");
+      var metaExtra = isDone ? (" \u00b7 Med. " + (rec.medidor || "-") + " \u00b7 Lect. " + (rec.lectura || "-") + " \u00b7 " + (rec.estado || "-") + (rec.cambioMedidor ? " \u00b7 \ud83d\udd04 cambio" : "")) : (u.medEsperado ? (" \u00b7 Med. " + u.medEsperado) : "");
       item.innerHTML =
         '<div class="u-status-dot ' + (isDone ? "done" : "pending") + '"></div>' +
         '<div class="u-body">' +
@@ -556,6 +615,12 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     currentEstado = rec ? (rec.estado || "") : "";
     currentFotoData = rec ? (rec.foto || null) : null;
     currentGps = (rec && rec.lat != null) ? { lat: rec.lat, lon: rec.lon, acc: rec.gpsAcc } : null;
+    currentCambio = rec ? !!rec.cambioMedidor : false;
+    currentFotoOldData = rec ? (rec.fotoAnterior || null) : null;
+    document.getElementById("fMedidorAnterior").value = rec ? (rec.medidorAnterior || "") : "";
+    document.getElementById("fCambio").checked = currentCambio;
+    renderCambioExtra();
+    renderPhotoAreaOld();
     renderEstadoGrid();
     renderPhotoArea();
     captureGpsSilently();
@@ -600,6 +665,34 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     }
   }
 
+  function renderCambioExtra() {
+    document.getElementById("cambioExtra").style.display = currentCambio ? "block" : "none";
+  }
+
+  function renderPhotoAreaOld() {
+    var area = document.getElementById("photoAreaOld");
+    if (currentFotoOldData) {
+      area.innerHTML =
+        '<img class="photo-preview" src="' + currentFotoOldData + '">' +
+        '<div class="photo-btns">' +
+          '<button class="btn-mini" id="btnRetomarOld">Retomar foto</button>' +
+          '<button class="btn-mini" id="btnQuitarFotoOld">Quitar foto</button>' +
+        '</div>';
+      document.getElementById("btnRetomarOld").addEventListener("click", function () {
+        document.getElementById("photoInputOld").click();
+      });
+      document.getElementById("btnQuitarFotoOld").addEventListener("click", function () {
+        currentFotoOldData = null;
+        renderPhotoAreaOld();
+      });
+    } else {
+      area.innerHTML = '<div class="photo-box" id="photoBoxTapOld">&#128247; Tocar para sacar foto del medidor anterior</div>';
+      document.getElementById("photoBoxTapOld").addEventListener("click", function () {
+        document.getElementById("photoInputOld").click();
+      });
+    }
+  }
+
   function triggerPhoto() {
     document.getElementById("photoInput").click();
   }
@@ -624,7 +717,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     );
   }
 
-  function handlePhotoFile(file) {
+  function handlePhotoFile(file, onDone) {
     var reader = new FileReader();
     reader.onload = function (ev) {
       var img = new Image();
@@ -638,8 +731,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
         canvas.height = h;
         var ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, w, h);
-        currentFotoData = canvas.toDataURL("image/jpeg", 0.72);
-        renderPhotoArea();
+        onDone(canvas.toDataURL("image/jpeg", 0.72));
       };
       img.src = ev.target.result;
     };
@@ -672,6 +764,9 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       medidor: medidor,
       lectura: lectura,
       estado: currentEstado,
+      cambioMedidor: currentCambio,
+      medidorAnterior: currentCambio ? document.getElementById("fMedidorAnterior").value.replace(/\s+/g, "") : "",
+      fotoAnterior: currentCambio ? (currentFotoOldData || "") : "",
       lat: currentGps ? currentGps.lat : null,
       lon: currentGps ? currentGps.lon : null,
       gpsAcc: currentGps ? currentGps.acc : null,
@@ -717,7 +812,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       alert("Todav\u00eda no hay registros cargados.");
       return;
     }
-    var header = ["Zona", "IC", "Usuario", "Domicilio", "Tarifa", "Medidor", "Lectura", "Estado", "Latitud", "Longitud", "PrecisionGPS_m", "Fecha", "TieneFoto"];
+    var header = ["Zona", "IC", "Usuario", "Domicilio", "Tarifa", "Medidor", "Lectura", "Estado", "CambioMedidor", "MedidorAnterior", "Latitud", "Longitud", "PrecisionGPS_m", "Fecha", "TieneFoto", "TieneFotoAnterior"];
     var lines = [header.join(";")];
     keys.sort(function (a, b) {
       var ra = records[a], rb = records[b];
@@ -730,7 +825,7 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
       var lat = (r.lat != null) ? r.lat.toFixed(6) : "";
       var lon = (r.lon != null) ? r.lon.toFixed(6) : "";
       var acc = (r.gpsAcc != null) ? Math.round(r.gpsAcc) : "";
-      var row = [r.zona, r.ic, r.usuario, r.domicilio, r.tipo || "", r.medidor, r.lectura, r.estado, lat, lon, acc, fecha, (r.foto ? "SI" : "NO")];
+      var row = [r.zona, r.ic, r.usuario, r.domicilio, r.tipo || "", r.medidor, r.lectura, r.estado, (r.cambioMedidor ? "SI" : "NO"), (r.medidorAnterior || ""), lat, lon, acc, fecha, (r.foto ? "SI" : "NO"), (r.fotoAnterior ? "SI" : "NO")];
       lines.push(row.map(csvEscape).join(";"));
     }
     var csv = "\uFEFF" + lines.join("\r\n");
@@ -752,29 +847,188 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
 
   function exportFotos() {
     var keys = Object.keys(records);
-    var conFoto = [];
+    var lista = [];
     for (var i = 0; i < keys.length; i++) {
-      if (records[keys[i]].foto) conFoto.push(records[keys[i]]);
+      var r = records[keys[i]];
+      if (r.foto) lista.push({ rec: r, data: r.foto, tag: "" });
+      if (r.fotoAnterior) lista.push({ rec: r, data: r.fotoAnterior, tag: "_anterior" });
     }
-    if (conFoto.length === 0) return;
+    if (lista.length === 0) return;
     var idx = 0;
     function next() {
-      if (idx >= conFoto.length) return;
-      var r = conFoto[idx];
+      if (idx >= lista.length) return;
+      var item = lista[idx];
+      var r = item.rec;
       var a = document.createElement("a");
-      a.href = r.foto;
+      a.href = item.data;
       var safeIc = String(r.ic).replace(/[^a-zA-Z0-9]/g, "");
       var safeZona = String(r.zona).replace(/[^a-zA-Z0-9]/g, "_");
-      a.download = "foto_" + safeZona + "_" + safeIc + ".jpg";
+      a.download = "foto_" + safeZona + "_" + safeIc + item.tag + ".jpg";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       idx++;
       setTimeout(next, 350);
     }
-    if (confirm("Tambi\u00e9n hay " + conFoto.length + " foto(s) cargadas. \u00bfDescargarlas ahora?")) {
+    if (confirm("Tambi\u00e9n hay " + lista.length + " foto(s) cargadas. \u00bfDescargarlas ahora?")) {
       next();
     }
+  }
+
+  /* ============ Export PDF ============ */
+  function pdfEnsureSpace(doc, yRef, needed, margin, pageH) {
+    if (yRef.y + needed > pageH - margin) {
+      doc.addPage();
+      yRef.y = margin;
+    }
+  }
+
+  function buildPdfDoc(zonaScope) {
+    var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+    var pageW = doc.internal.pageSize.getWidth();
+    var pageH = doc.internal.pageSize.getHeight();
+    var margin = 14;
+    var yRef = { y: margin };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text("DPEC - Relevamiento GU T1", margin, yRef.y);
+    yRef.y += 7;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    var now = new Date();
+    doc.text((zonaScope ? ("Zona: " + zonaScope) : "Todas las zonas") + "  -  " + now.toLocaleString("es-AR"), margin, yRef.y);
+    yRef.y += 9;
+
+    var scope = zonaScope ? [zonaScope] : zonas;
+
+    for (var zi = 0; zi < scope.length; zi++) {
+      var z = scope[zi];
+      var list = (zonaUsers[z] || []).slice();
+      var done = 0;
+      for (var k = 0; k < list.length; k++) if (records[list[k].id]) done++;
+
+      pdfEnsureSpace(doc, yRef, 12, margin, pageH);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text(z + "  (" + done + " / " + list.length + " cargados)", margin, yRef.y);
+      yRef.y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+
+      var pendientes = [];
+      var cargados = [];
+      for (var i = 0; i < list.length; i++) {
+        if (records[list[i].id]) cargados.push(list[i]); else pendientes.push(list[i]);
+      }
+
+      if (pendientes.length > 0) {
+        pdfEnsureSpace(doc, yRef, 6, margin, pageH);
+        doc.setFont("helvetica", "bold");
+        doc.text("Pendientes (" + pendientes.length + "):", margin, yRef.y);
+        yRef.y += 5.5;
+        doc.setFont("helvetica", "normal");
+        for (var p = 0; p < pendientes.length; p++) {
+          var pu = pendientes[p];
+          var line = "- " + pu.usuario + "  (IC " + pu.ic + ")  " + pu.domicilio;
+          var wrapped = doc.splitTextToSize(line, pageW - margin * 2);
+          pdfEnsureSpace(doc, yRef, wrapped.length * 4.6, margin, pageH);
+          doc.text(wrapped, margin, yRef.y);
+          yRef.y += wrapped.length * 4.6;
+        }
+        yRef.y += 3;
+      }
+
+      for (var c = 0; c < cargados.length; c++) {
+        var u = cargados[c];
+        var rec = records[u.id];
+        pdfEnsureSpace(doc, yRef, 16, margin, pageH);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.text(u.usuario, margin, yRef.y);
+        yRef.y += 5;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        var infoLines = [
+          "IC " + u.ic + "   -   " + u.domicilio,
+          "Tarifa: " + (u.tipo || "-") + "   -   Medidor: " + (rec.medidor || "-") + "   -   Lectura: " + (rec.lectura || "-"),
+          "Estado: " + (rec.estado || "-") + (rec.cambioMedidor ? ("   -   Cambio de medidor (anterior: " + (rec.medidorAnterior || "-") + ")") : "")
+        ];
+        if (rec.lat != null) {
+          infoLines.push("GPS: " + rec.lat.toFixed(6) + ", " + rec.lon.toFixed(6));
+        }
+        infoLines.push("Fecha: " + (rec.fecha ? new Date(rec.fecha).toLocaleString("es-AR") : "-"));
+        for (var il = 0; il < infoLines.length; il++) {
+          pdfEnsureSpace(doc, yRef, 4.6, margin, pageH);
+          doc.text(infoLines[il], margin, yRef.y);
+          yRef.y += 4.6;
+        }
+        yRef.y += 1;
+
+        var imgW = 62;
+        if (rec.foto) {
+          try {
+            var props = doc.getImageProperties(rec.foto);
+            var imgH = imgW * props.height / props.width;
+            pdfEnsureSpace(doc, yRef, imgH + 4, margin, pageH);
+            doc.addImage(rec.foto, "JPEG", margin, yRef.y, imgW, imgH);
+            if (rec.fotoAnterior) {
+              try {
+                var props2 = doc.getImageProperties(rec.fotoAnterior);
+                var imgH2 = imgW * props2.height / props2.width;
+                doc.setFontSize(8);
+                doc.text("Medidor anterior", margin + imgW + 6, yRef.y + 3);
+                doc.addImage(rec.fotoAnterior, "JPEG", margin + imgW + 6, yRef.y + 5, imgW, imgH2);
+                yRef.y += Math.max(imgH, imgH2 + 5) + 5;
+              } catch (e2) {
+                yRef.y += imgH + 5;
+              }
+            } else {
+              yRef.y += imgH + 5;
+            }
+          } catch (e) {
+            yRef.y += 2;
+          }
+        } else if (rec.fotoAnterior) {
+          try {
+            var props3 = doc.getImageProperties(rec.fotoAnterior);
+            var imgH3 = imgW * props3.height / props3.width;
+            pdfEnsureSpace(doc, yRef, imgH3 + 4, margin, pageH);
+            doc.setFontSize(8);
+            doc.text("Medidor anterior", margin, yRef.y + 3);
+            doc.addImage(rec.fotoAnterior, "JPEG", margin, yRef.y + 5, imgW, imgH3);
+            yRef.y += imgH3 + 9;
+          } catch (e3) {
+            yRef.y += 2;
+          }
+        }
+
+        pdfEnsureSpace(doc, yRef, 4, margin, pageH);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yRef.y, pageW - margin, yRef.y);
+        yRef.y += 6;
+      }
+
+      yRef.y += 3;
+    }
+
+    return doc;
+  }
+
+  function generarPDF(zonaScope) {
+    if (typeof window.jspdf === "undefined") {
+      alert("Falta el archivo jspdf.umd.min.js en el repo. Sub\u00ed ese archivo junto al resto para poder generar el PDF.");
+      return;
+    }
+    var keys = Object.keys(records);
+    if (keys.length === 0 && !confirm("Todav\u00eda no hay registros cargados. \u00bfGenerar igual el PDF con la lista de pendientes?")) {
+      return;
+    }
+    var doc = buildPdfDoc(zonaScope);
+    var d = new Date();
+    var stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes());
+    var safeZona = zonaScope ? zonaScope.replace(/[^a-zA-Z0-9]/g, "_") : "todas";
+    doc.save("dpec_gu_t1_" + safeZona + "_" + stamp + ".pdf");
   }
 
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -846,13 +1100,36 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
     });
 
     document.getElementById("photoInput").addEventListener("change", function (e) {
-      if (e.target.files && e.target.files[0]) handlePhotoFile(e.target.files[0]);
+      if (e.target.files && e.target.files[0]) {
+        handlePhotoFile(e.target.files[0], function (dataUrl) {
+          currentFotoData = dataUrl;
+          renderPhotoArea();
+        });
+      }
       this.value = "";
+    });
+
+    document.getElementById("photoInputOld").addEventListener("change", function (e) {
+      if (e.target.files && e.target.files[0]) {
+        handlePhotoFile(e.target.files[0], function (dataUrl) {
+          currentFotoOldData = dataUrl;
+          renderPhotoAreaOld();
+        });
+      }
+      this.value = "";
+    });
+
+    document.getElementById("fCambio").addEventListener("change", function () {
+      currentCambio = this.checked;
+      renderCambioExtra();
+      if (currentCambio) renderPhotoAreaOld();
     });
 
     document.getElementById("btnGuardar").addEventListener("click", guardarRegistro);
     document.getElementById("btnLimpiar").addEventListener("click", borrarRegistro);
     document.getElementById("btnExportar").addEventListener("click", exportCSV);
+    document.getElementById("btnPdfTodo").addEventListener("click", function () { generarPDF(null); });
+    document.getElementById("btnPdfZona").addEventListener("click", function () { generarPDF(currentZona); });
     document.getElementById("btnResumen").addEventListener("click", function () {
       renderResumen();
       document.getElementById("resumenModal").classList.add("show");
@@ -871,5 +1148,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+<script src="./jspdf.umd.min.js"></script>
 </body>
 </html>
