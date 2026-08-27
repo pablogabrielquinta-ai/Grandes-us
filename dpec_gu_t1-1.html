@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>DPEC - Relevamiento GU T1</title>
-<link rel="manifest" href="data:application/manifest+json,{}">
+<link rel="manifest" href="./t1-manifest.json">
+<meta name="theme-color" content="#14181a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="./gu-icon-192.png">
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -859,6 +864,12 @@ var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABR
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./t1-sw.js").catch(function () {});
+  });
+}
 </script>
 </body>
 </html>
