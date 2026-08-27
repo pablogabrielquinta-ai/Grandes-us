@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>DPEC - Relevamiento GU T1</title>
+<link rel="manifest" href="data:application/manifest+json,{}">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #14181a;
+    color: #e7e4dc;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+  #app { min-height: 100%; display: flex; flex-direction: column; }
+
+  /* ===== Header ===== */
+  .hdr {
+    background: linear-gradient(135deg, #1c2b1f 0%, #14181a 100%);
+    border-bottom: 2px solid #3a6b3f;
+    padding: 12px 14px;
+    position: sticky; top: 0; z-index: 20;
+  }
+  .hdr-top { display: flex; align-items: center; justify-content: space-between; }
+  .hdr-brand { display: flex; align-items: center; gap: 8px; }
+  .hdr-logo {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: linear-gradient(135deg, #d9a441, #b9822c);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: #14181a; flex: none;
+  }
+  .hdr-title { font-size: 14px; font-weight: 700; letter-spacing: .3px; color: #f2efe6; }
+  .hdr-sub { font-size: 10.5px; color: #8fae86; margin-top: 1px; }
+  .hdr-back {
+    background: none; border: 1px solid #3a4a3d; color: #cfcabb;
+    border-radius: 8px; padding: 7px 11px; font-size: 12.5px;
+  }
+  .hdr-back:active { background: #24302a; }
+
+  .progress-wrap { margin-top: 10px; }
+  .progress-bar-track { height: 6px; border-radius: 4px; background: #26302a; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3a6b3f, #6fae62); border-radius: 4px; transition: width .25s; }
+  .progress-txt { font-size: 11px; color: #9ea89a; margin-top: 5px; display: flex; justify-content: space-between; }
+
+  /* ===== Body ===== */
+  .main { flex: 1; padding: 12px 12px 90px 12px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Zona grid */
+  .zona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .zona-card {
+    background: #1b2120; border: 1px solid #2b332e; border-radius: 12px;
+    padding: 12px 12px 10px 12px; text-align: left;
+  }
+  .zona-card:active { border-color: #6fae62; }
+  .zona-name { font-size: 13px; font-weight: 700; color: #f2efe6; line-height: 1.25; min-height: 33px; }
+  .zona-meta { font-size: 10.5px; color: #8b968a; margin-top: 7px; }
+  .zona-bar-track { height: 5px; border-radius: 3px; background: #262c28; margin-top: 6px; overflow: hidden; }
+  .zona-bar-fill { height: 100%; background: #d9a441; border-radius: 3px; }
+  .zona-bar-fill.done { background: #6fae62; }
+
+  /* Search */
+  .search-box {
+    display: flex; align-items: center; gap: 8px; background: #1b2120;
+    border: 1px solid #2b332e; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px;
+  }
+  .search-box input {
+    flex: 1; background: none; border: none; color: #e7e4dc; font-size: 14px; outline: none;
+  }
+  .filter-row { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; }
+  .filter-chip {
+    flex: none; font-size: 11.5px; padding: 6px 11px; border-radius: 20px;
+    background: #1b2120; border: 1px solid #2b332e; color: #b9c0b6; white-space: nowrap;
+  }
+  .filter-chip.active { background: #2c4630; border-color: #6fae62; color: #d9edd0; }
+
+  .u-item {
+    background: #1b2120; border: 1px solid #2b332e; border-radius: 11px;
+    padding: 11px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+  }
+  .u-item:active { border-color: #d9a441; }
+  .u-status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4a5450; flex: none; }
+  .u-status-dot.done { background: #6fae62; }
+  .u-status-dot.pending { background: #d9a441; }
+  .u-body { flex: 1; min-width: 0; }
+  .u-name { font-size: 13.5px; font-weight: 700; color: #f2efe6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .u-meta { font-size: 11px; color: #8b968a; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .u-arrow { color: #55605a; font-size: 16px; }
+
+  .empty-msg { text-align: center; color: #6c766f; font-size: 13px; padding: 30px 10px; }
+
+  /* Detail form */
+  .card { background: #1b2120; border: 1px solid #2b332e; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .card-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: #7c9f76; font-weight: 700; margin-bottom: 4px; }
+  .card-value { font-size: 15px; color: #f2efe6; font-weight: 600; }
+  .card-value.small { font-size: 12.5px; color: #c7c2b3; font-weight: 400; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11.5px; color: #9ea89a; margin-bottom: 6px; font-weight: 600; }
+  .field input[type=text], .field input[type=number] {
+    width: 100%; background: #12100e; border: 1.5px solid #33403a; border-radius: 9px;
+    padding: 12px 12px; font-size: 16px; color: #f2efe6; outline: none;
+  }
+  .field input:focus { border-color: #6fae62; }
+
+  .estado-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .estado-opt {
+    padding: 11px 8px; border-radius: 9px; border: 1.5px solid #33403a; background: #12100e;
+    color: #c7c2b3; font-size: 12.5px; text-align: center; font-weight: 600;
+  }
+  .estado-opt.sel { border-color: #6fae62; background: #1f3322; color: #d9edd0; }
+
+  .gps-box {
+    border: 1.5px dashed #3a4a3d; border-radius: 10px; padding: 14px; text-align: center;
+    color: #8b968a; font-size: 12.5px;
+  }
+  .gps-ok {
+    border: 1.5px solid #3a6b3f; border-radius: 10px; padding: 11px 12px; background: #16221a;
+  }
+  .gps-coords { font-size: 13.5px; font-weight: 700; color: #d9edd0; }
+  .gps-acc { font-size: 11px; color: #8b968a; margin-top: 3px; }
+  .gps-btns { display: flex; gap: 8px; margin-top: 9px; }
+
+  .photo-box {
+    border: 1.5px dashed #3a4a3d; border-radius: 10px; padding: 14px; text-align: center;
+    color: #8b968a; font-size: 12.5px; margin-top: 4px;
+  }
+  .photo-preview { width: 100%; border-radius: 9px; display: block; margin-bottom: 8px; }
+  .photo-btns { display: flex; gap: 8px; }
+  .btn-mini {
+    flex: 1; background: #24302a; border: 1px solid #3a4a3d; color: #d9edd0;
+    border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 600;
+  }
+
+  /* Buttons */
+  .btn { width: 100%; padding: 14px; border-radius: 11px; font-size: 15px; font-weight: 700; border: none; }
+  .btn-primary { background: linear-gradient(135deg, #6fae62, #4a8a45); color: #0d140d; }
+  .btn-primary:active { opacity: .85; }
+  .btn-secondary { background: #1b2120; border: 1px solid #3a4a3d; color: #cfcabb; }
+  .btn-danger { background: #2e1a18; border: 1px solid #5a2c27; color: #e8a49c; }
+  .btn-row { display: flex; gap: 8px; margin-top: 6px; }
+  .btn-row .btn { width: auto; flex: 1; }
+
+  /* Bottom bar */
+  .bottombar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #171c1a; border-top: 1px solid #2b332e;
+    padding: 10px 12px; display: flex; gap: 8px; z-index: 20;
+  }
+  .bottombar .btn { padding: 12px; font-size: 13.5px; }
+
+  .toast {
+    position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%);
+    background: #2c4630; color: #d9edd0; padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; z-index: 50; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 40;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal-sheet { background: #191f1c; border-radius: 16px 16px 0 0; padding: 18px 16px 22px 16px; width: 100%; max-width: 480px; }
+  .modal-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: #f2efe6; }
+  .modal-row { padding: 12px 4px; border-bottom: 1px solid #262c28; font-size: 13.5px; color: #cfcabb; }
+  .modal-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-brand">
+        <div class="hdr-logo">GU</div>
+        <div>
+          <div class="hdr-title" id="hdrTitle">Relevamiento GU T1</div>
+          <div class="hdr-sub" id="hdrSub">DPEC · Grandes Usuarios</div>
+        </div>
+      </div>
+      <button class="hdr-back" id="btnBack" style="display:none;">&#8592; Volver</button>
+    </div>
+    <div class="progress-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill" style="width:0%;"></div></div>
+      <div class="progress-txt"><span id="progressTxt">0 / 0 cargados</span><span id="progressPct">0%</span></div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- SCREEN: Home (zonas) -->
+    <div class="screen active" id="screenHome">
+      <div class="search-box">
+        <span>&#128269;</span>
+        <input type="text" id="medSearch" placeholder="Buscar por N&deg; de medidor...">
+      </div>
+      <div id="medSearchResults"></div>
+      <div class="search-box" id="zonaSearchBox">
+        <span>&#128269;</span>
+        <input type="text" id="zonaSearch" placeholder="Buscar zona...">
+      </div>
+      <div class="zona-grid" id="zonaGrid"></div>
+    </div>
+
+    <!-- SCREEN: Zona (lista de usuarios) -->
+    <div class="screen" id="screenZona">
+      <div class="search-box">
+        <span>&#128269;</span>
+        <input type="text" id="userSearch" placeholder="Buscar usuario, IC o domicilio...">
+      </div>
+      <div class="filter-row">
+        <div class="filter-chip active" data-f="todos">Todos</div>
+        <div class="filter-chip" data-f="pendiente">Pendientes</div>
+        <div class="filter-chip" data-f="cargado">Cargados</div>
+      </div>
+      <div id="userList"></div>
+    </div>
+
+    <!-- SCREEN: Detalle / Carga -->
+    <div class="screen" id="screenDetalle">
+      <div class="card">
+        <div class="card-label">Usuario</div>
+        <div class="card-value" id="dUsuario">-</div>
+        <div style="height:8px;"></div>
+        <div class="card-label">IC</div>
+        <div class="card-value small" id="dIC">-</div>
+        <div style="height:8px;"></div>
+        <div class="card-label">Domicilio</div>
+        <div class="card-value small" id="dDomicilio">-</div>
+        <div style="height:8px;"></div>
+        <div class="card-label">Zona</div>
+        <div class="card-value small" id="dZona">-</div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>N&deg; de Medidor (T1)</label>
+          <input type="text" id="fMedidor" placeholder="Ej: 9770670" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Lectura</label>
+          <input type="text" id="fLectura" placeholder="Ej: 004521" inputmode="numeric">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Estado</label>
+          <div class="estado-grid" id="estadoGrid"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field" style="margin-bottom:0;">
+          <label>Foto del medidor</label>
+          <div id="photoArea"></div>
+          <input type="file" id="photoInput" accept="image/*" style="display:none;">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnGuardar">Guardar registro</button>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btnLimpiar">Borrar carga</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottombar" id="bottombarHome">
+    <button class="btn btn-secondary" id="btnResumen">Resumen</button>
+    <button class="btn btn-primary" id="btnExportar">Exportar CSV</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-bg" id="resumenModal">
+    <div class="modal-sheet">
+      <div class="modal-title">Resumen general</div>
+      <div id="resumenBody"></div>
+      <button class="btn btn-secondary" id="btnCerrarResumen" style="margin-top:12px;">Cerrar</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* DATA_PLACEHOLDER */
+var GU_DATA = [["DEPOT EXPRESS S.R.L.","30163768","AV. 3 DE ABRIL 546","3 DE ABRIL","133401","Lectura Larga"],["M.C.C. PALACIO MUNICIPAL","60266823","LAVALLE 50/51","3 DE ABRIL","173235","Lectura Larga"],["MEDICCIS S.R.L.","30172469","AV. 3 DE ABRIL 636","3 DE ABRIL","885618","Lectura Larga"],["BANCO PATAGONIA S.A.","10801734","AV. 3 DE ABRIL 1061","3 DE ABRIL","885796","Lectura Larga"],["EST.DE SERV.SHELL","10800072","AV. 3 DE ABRIL 402","3 DE ABRIL","2235490","Prosumidor"],["M.SECRETARIA GOB.CTES PANOPTICO LA UNIDAD","60292441","AV 3 DE ABRIL 57","3 DE ABRIL","2543359","Lectura Larga"],["CENTRO MEDICO S.A.","10800016","AV. 3 DE ABRIL 869","3 DE ABRIL","2802387","Lectura Larga"],["M.COORDINACION Y PLANIFICACION CTES","60298319","AV 3 DE ABRIL 57","3 DE ABRIL","3288454","Prosumidor"],["LA ALONDRA S.A.","10801473","AV. 3 DE ABRIL N¦ 809","3 DE ABRIL","3440072","Lectura Larga"],["FRESENIUS MEDICAL CARE ARG. S.A.","10801046","AV. 3 DE ABRIL 869","3 DE ABRIL","4003124","Lectura Larga"],["TELECOM ARG. S.A.","30082828","MISIONES 1515","3 DE ABRIL","4409395","T1"],["M.SECRETARIA GOB.CTES PANOPTICO LA UNIDAD","60291863","AV 3 DE ABRIL","3 DE ABRIL","4637311","Lectura Larga"],["GALVEZ JUAN MANUEL","10270143","AV. 3 DE ABRIL 716","3 DE ABRIL","4918003","T1"],["FARMACIA S.C.S.","10801536","SALTA 1598","3 DE ABRIL","5003216","Lectura Larga"],["UNIDAD RENAL CTES.","10800988","AV. 3 DE ABRIL 636","3 DE ABRIL","5003273","Lectura Larga"],["M.SECRETARIA GOB.CTES PANOPTICO LA UNIDAD","30336803","AV 3 DE ABRIL 57","3 DE ABRIL","24331667","SMART"],["SUPERMAX  S.A.","10801234","AV. 3 DE ABRIL 1047","3 DE ABRIL","51568495","Lectura Larga Invertida"],["BUSINESS GROUP S.A.","30337010","3 DE ABRIL 57 - LA UNIDAD LOCAL 7","3 DE ABRIL","96035421","MT174"],["TOSOLINI ELBA","30196356","AV. 3 DE ABRIL 357","3 DE ABRIL","251005596","Landys E330"],["TELECOM ARG. S.A.","10801470","3 DE ABRIL 435","3 DE ABRIL","251038342","Landys E330"],["CORREDORES VIALES S.A.","30198408","AV. 3 DE ABRIL S/N","3 DE ABRIL","601029985","Ampy/Landys"],["MAJUFAR S.R.L.","30160997","AV. 3 DE ABRIL 504","3 DE ABRIL","601030014","Ampy/Landys"],["LA UNIDAD FIDEICOMISO INMOBILIARIO","30292075","DON BOSCO 1550","3 DE ABRIL","611000036","Ampy/Landys"],["FILOMENA SRL","30337208","AV 3 ABRIL 57","3 DE ABRIL","611000050","Ampy/Landys"],["CERKIDE S.R.L.","30138251","AV. 3 DE ABRIL 630","3 DE ABRIL","611000225","Ampy/Landys"],["BUSINESS GROUP S.A.","30337899","AV 3 DE ABRIL 57","3 DE ABRIL","611000328","Ampy/Landys"],["IPRI.SRL.","10401655","HEROES CIVILES 1605","3 DE ABRIL","612005735","Ampy/Landys"],["MASSO E.E.","10004548","SALTA 1524","3 DE ABRIL","612005744","Ampy/Landys"],["DEPOT EXPRESS S.R.L.","30173840","AV. 3 DE ABRIL 624","3 DE ABRIL","4695843","Lectura Larga"],["CORREDORES VIALES S.A.","30198407","AV. 3 DE ABRIL 172","3 DE ABRIL","5003328","Lectura Larga"],["CORREDORES VIALES S.A.","30198409","AV. 3 DE ABRIL 72","3 DE ABRIL","612005625","Ampy/Landys"],["JEMAN S.R.L.","30203129","AV. 3 DE ABRIL 1068","3 DE ABRIL","4575065","Lectura Larga"],["STORES DELIVERY HERO","30206373","AV. 3 DE ABRIL 692","3 DE ABRIL","251005658","Landys E330"],["SUPERMAX S.A.","30219473","AV. 3 DE ABRIL 464","3 DE ABRIL","251005681","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","10800400","MEDRANO AL SUR (B¦ F.J.DE LA QUINTA","AGUAS DE CORRIENTES","823457","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800381","B¦ LAGUNA  SECA (Tanque elevado)","AGUAS DE CORRIENTES","846891","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","10800392","B¦  1536  VIVIENDAS","AGUAS DE CORRIENTES","846898","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","10801673","TIMOTEO GRILLO  R. 12 - B* UNIVERSI","AGUAS DE CORRIENTES","904853","T1"],["AGUAS DE CORRIENTES S.A. (T)","60131831","B* SANTA CATALINA 678 VIV","AGUAS DE CORRIENTES","906978","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","10800650","AV. 3 DE ABRIL 1280","AGUAS DE CORRIENTES","1283798","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800397","SANTA FE 331","AGUAS DE CORRIENTES","1694027","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800656","AV. 3 DE ABRIL 1280","AGUAS DE CORRIENTES","1802285","T1"],["AGUAS DE CORRIENTES S.A. (T)","10801432","CALLE JOAQUIN ARQUEROS Y LILA SOTO","AGUAS DE CORRIENTES","2114338","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800396","AV. JUAN PUJOL 2310","AGUAS DE CORRIENTES","2159065","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800403","NECOCHEA 1","AGUAS DE CORRIENTES","2159207","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800399","GUIDO SPANO 1910","AGUAS DE CORRIENTES","2159231","T1"],["AGUAS DE CORRIENTES S.A.","60079464","PEDRO QUEVEDO 110 Y PJE S/NOMBRE","AGUAS DE CORRIENTES","2398259","T1"],["AGUAS DE CORRIENTES S.A. (T)","60057784","Bº INDEPENDENCIA","AGUAS DE CORRIENTES","2543384","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","60057790","BARRIO NUEVO PIRAYUI","AGUAS DE CORRIENTES","2543386","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","10801335","B¦ PATONO","AGUAS DE CORRIENTES","2959845","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800394","GDOR. GALLINO 100","AGUAS DE CORRIENTES","2960020","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800379","BUENOS AIRES 398","AGUAS DE CORRIENTES","3603134","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","60213444","LORETO ESQ EX VIA","AGUAS DE CORRIENTES","4183681","T1"],["AGUAS DE CORRIENTES S.A. (T)","60017462","50 VIV.  - Bº PIRAYUI","AGUAS DE CORRIENTES","4233144","T1"],["AGUAS DE CORRIENTES S.A. (T)","60183126","LORETO ESQ CALLE 2","AGUAS DE CORRIENTES","4378203","T1"],["AGUAS DE CORRIENTES S.A. (T)","60059299","RESOAGLI Y BOSTON -Bº LA OLLA 2","AGUAS DE CORRIENTES","4491792","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800646","AV. 3 DE ABRIL 1280","AGUAS DE CORRIENTES","4637318","Lectura Larga"],["AGUAS DE CORRIENTES S.A. (T)","60247629","CALLE 567 E/562 Y RUTA PROV 5","AGUAS DE CORRIENTES","4920840","T1"],["AGUAS DE CORRIENTES S.A. (T)","60059341","FRONDIZI / VALDEPEÑA Y NICARAGUA","AGUAS DE CORRIENTES","4926636","T1"],["AGUAS DE CORRIENTES S.A. (T)","60046764","44 VIV. Bº QUILMES","AGUAS DE CORRIENTES","5071139","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800398","BARRIO APIPE ( ARGERICH AL 5000)","AGUAS DE CORRIENTES","5083803","T1"],["AGUAS DE CORRIENTES S.A. (T)","10800819","BONPLAND 89","AGUAS DE CORRIENTES","5105406","T1"],["AGUAS DE CORRIENTES S.A.","30343573","RAFAEL OBLIGADO ESQ 20 DE MAYO O","AGUAS DE CORRIENTES","5107549","Elster A1052"],["AGUAS DE CORRIENTES S.A. (T)","10800405","B¦  500 VIVIENDAS (MOLINA PUNTA)","AGUAS DE CORRIENTES","5154532","T1"],["AGUAS DE CORRIENTES S.A. (T)","60221825","BOLIVAR ESQ ITUZAINGO","AGUAS DE CORRIENTES","5172915","T1"],["AGUAS DE CORRIENTES S.A. (T)","60270466","PERUGORRÍA ESQ. HEROES CIVILES","AGUAS DE CORRIENTES","24236903","SMART"],["AGUAS DE CORRIENTES S.A. (T)","60097893","AEROPUERTO PIRAGINE NIVEYRO","AGUAS DE CORRIENTES","24237196","IT330"],["AGUAS DE CORRIENTES S.A.","30343580","RAUL ALFONSIN ESQUINA RECONQUISTA","AGUAS DE CORRIENTES","24300299","MT174"],["AGUAS DE CORRIENTES S.A.","30345728","ARMENIA Y BALSIBAZO","AGUAS DE CORRIENTES","24300895","MT174"],["AGUAS DE CORRIENTES S.A. (T)","60298325","SUECIA Y CALLE 727","AGUAS DE CORRIENTES","24300909","MIDDE DTS27"],["AGUAS DE CORRIENTES S.A. (T)","60182614","LORETO ESQ CALLE 9","AGUAS DE CORRIENTES","24300912","MT174"],["AGUAS DE CORRIENTES S.A. (T)","10800380","GUARDIAMARINA 257","AGUAS DE CORRIENTES","24331656","SMART"],["AGUAS DE CORRIENTES S.A. (T)","10800383","AVDA. INDEPENDENCIA Y MILAN","AGUAS DE CORRIENTES","24332179","SMART"],["AGUAS DE CORRIENTES  S.A.","10800384","GDOR. PAMPIN 54","AGUAS DE CORRIENTES","24332229","IT330"],["AGUAS DE CORRIENTES  S.A.","10800385","CORREA FERNANDEZ 321","AGUAS DE CORRIENTES","24332309","IT330"],["AGUAS DE CORRIENTES S.A. (T)","60077212","PLANTA 17 DE AGOSTO","AGUAS DE CORRIENTES","83559605","Lectura Larga Invertida"],["AGUAS DE CORRIENTES S.A. (T)","10800401","PAIUBRE Y EL TREBOL (ÐAPINDA)","AGUAS DE CORRIENTES","95924108","MT174"],["AGUAS DE CORRIENTES S.A.","60284735","C.E. JASID Y CALLE 109 B° STA RITA","AGUAS DE CORRIENTES","96034317","MT174"],["AGUAS DE CORRIENTES S.A. (T)","60025999","RIO MIRIÑAY Y GUAYAQUIL-Bº S. ROQUE","AGUAS DE CORRIENTES","96034498","MT174"],["AGUAS DE CORRIENTES S.A.","30319891","TUPUNGATO Y HUMAHUACA","AGUAS DE CORRIENTES","96034601","MT174"],["AGUAS DE CORRIENTES S.A. (T)","11800377","TENIENTE IBAÑEZ Y GDOR CONTE","AGUAS DE CORRIENTES","251005592","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60204543","ARGENTINA Y RICARDO GUTIERREZ","AGUAS DE CORRIENTES","251005625","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60206695","LAS MARGARITAS E/ STO TOME Y M.PTA","AGUAS DE CORRIENTES","251005631","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60172207","M I LOZA ESQ GRAL PAZ","AGUAS DE CORRIENTES","251005633","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60180330","AMANDA ETCHEGUREN 6300","AGUAS DE CORRIENTES","251005671","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60204528","GUADALAJARA E/MURCIA Y SEVILLA","AGUAS DE CORRIENTES","251005679","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60217863","ACCESO PERICHON","AGUAS DE CORRIENTES","251038305","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60032713","CARLOS PELLEGRINI ESQ. ENTRE RIOS","AGUAS DE CORRIENTES","251046908","Landys E330"],["AGUAS DE CORRIENTES S.A. (T)","60093635","PAIUBRE ESQ LAS HERAS","AGUAS DE CORRIENTES","601030016","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60149451","FRAGATA HERCULES Y GRAL. PAZ","AGUAS DE CORRIENTES","601030066","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10800754","AgustÝn Lara y Calle N¦ 19","AGUAS DE CORRIENTES","611000011","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60075280","LAVALLE (Bº 17 DE AGOSTO) 6900","AGUAS DE CORRIENTES","611000046","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60219604","GUATEMALA Y GUAYAQUIL","AGUAS DE CORRIENTES","611000051","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60137090","CALLE 445 ESQ CALLE 234","AGUAS DE CORRIENTES","611000089","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10800386","JUJUY 485","AGUAS DE CORRIENTES","611000217","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10800755","RAFAEL OBLIGADO 3397","AGUAS DE CORRIENTES","611000235","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10801699","RIO CHICO Y CANAL 4","AGUAS DE CORRIENTES","611000253","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10801160","B¬ SAN ANTONIO OESTE -PLAZOLETA -","AGUAS DE CORRIENTES","611000273","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60131827","B* SANTA CATALINA 678 VIV","AGUAS DE CORRIENTES","612000061","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10800382","B¦ LAGUNA SECA (Liquidos Cloacales)","AGUAS DE CORRIENTES","612000120","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10800593","BARRIO SAN GERONIMO","AGUAS DE CORRIENTES","612000128","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60076957","Bº 17 DE AGOSTO FTE S2 CAS 2","AGUAS DE CORRIENTES","612002086","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10800378","CARLOS PELLEGRINI 452","AGUAS DE CORRIENTES","612005603","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","10801274","ROMULO ARTIEDA 2399","AGUAS DE CORRIENTES","612005686","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60200462","ROMERO ESQ NICARAGUA","AGUAS DE CORRIENTES","612005694","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60251080","USHUAHIA ESQUINA CRESPO","AGUAS DE CORRIENTES","612005749","Ampy/Landys"],["AGUAS DE CORRIENTES S.A. (T)","60165913","PUNTA VIDAL Y SALADAS","AGUAS DE CORRIENTES","4932239","T1"],["MTPD Bº Anahí SET Nº 189","30039991","Canal 13 e Indonesia","ARMENIA","81463","T1"],["MTPD PUNTA TAITALO SET N° 912","30140116","PUNTA TAITALO  -  S.E.T. 912","ARMENIA","92207","T1"],["TIPOITI S.A. TEX. I.C.","10270338","AV. ARMENIA 4601","ARMENIA","100005","GUMA TIPOITI"],["MTPD SALADAS AL FONDO SET N° 1098","30139996","SALADAS AL FONDO PJE. VIDAL","ARMENIA","116758","T1"],["MTPD B° PIRAGINI NIVEYRO SET Nº 1026","30159172","LOS ALELIES Y LAS CALENDULAS","ARMENIA","116766","T1"],["MTPD B° CANAL 13 - SET N°1011–","30222827","CANAL 13 Y GROELANDIA","ARMENIA","149747","T1"],["MTPD B° PIRAGINI NIVEYRO SET N° 594","30159304","LAS DALIAS ESQ. LAS TERESITAS","ARMENIA","149749","T1"],["MTPD PUNTA TAITALO SET N° 626","30139728","PUNTA TAITALO - S.E.T. 626","ARMENIA","149752","T1"],["MTPD B° PIRAGINE NIVEYRO  SET N° 566","30161915","CALLE N° 37 S/N CASI LAS CAMELIAS","ARMENIA","149776","T1"],["MTPD Bº PLACIDO MARTINEZ SET Nº 505","10270586","AV. CHACABUCO 505","ARMENIA","149782","T1"],["MTPD Bº PUJOL SET Nº 701","10270589","BONPLAND","ARMENIA","174978","T1"],["MTPD Bº ANAHI SET Nº 631","10270607","ANGEL NAVEA 4200","ARMENIA","174983","T1"],["MTPD Bº MOLINA PUNTA SET Nº 116","10270619","BO. MOLINA PTA","ARMENIA","175001","T1"],["MTPD Bº LOMAS DEL MIRADOR SET Nº491","10270609","BO. APIPE CALLE 39","ARMENIA","175921","T1"],["MTPD. TAITALO SET N° 1003","30115492","MTPD. TAITALO SET.N°1003","ARMENIA","175928","T1"],["MTPD Bº Plácido Martínez SET Nº 44","30040022","Av. Armenia y Chacabuco","ARMENIA","175944","T1"],["MTPD B° LOMAS DEL MIRADOR SET N° 952","30161930","ZARAGOZA Y SEVILLA","ARMENIA","175945","T1"],["MTPD Bº MOLINA PUNTA SET Nº 169","10270621","BO. MOLINA PTA","ARMENIA","175946","T1"],["MTPD Bº PLACIDO MARTINEZ SET Nº 519","10270587","AV. CHACABUCO 110","ARMENIA","175970","T1"],["MTPD Bº Industrial SET Nº 726","30040065","José Ingenieros y Río Chico","ARMENIA","179879","T1"],["SALTA REFRESCOS S.A.","30117963","MARTIN FIERRO 524","ARMENIA","272365","Lectura Larga"],["MTPD Bº PUJOL SET Nº 129","10270588","ZACARIAS SANCHEZ","ARMENIA","626476","T1"],["MTPD Bº QUINTA FERRE SET Nº 775","30008151","Bº QUINTA FERRE - SET 775","ARMENIA","716271","T1"],["MTPD Bº QUINTA FERRE SET Nº 504","10270590","25 DE MAYO","ARMENIA","716298","T1"],["INDUSTRIAL  GASEOSA  SRL.","10800047","AV. ARMENIA 4187","ARMENIA","757936","Lectura Larga"],["NI SHIMAO","10444875","RIO CHICO 5535","ARMENIA","846863","Lectura Larga"],["MTPD Bº LOMAS DEL MIRADOR SET Nº403","10270610","BO. APIPE CALLE 41","ARMENIA","880211","T1"],["TELEFONICA MOVILES ARG. S.A.","10212915","R. DE ESCALADA","ARMENIA","885672","Lectura Larga"],["CASTAGNE ALFREDO HECTOR","10256555","PJE. PUJOL 2550","ARMENIA","885794","Lectura Larga"],["V.M.O. S.R.L.","10399911","AV. ARMENIA 3104","ARMENIA","885807","Lectura Larga"],["DEPOT EXPRESS S.R.L.","30163098","AV. ARMENIA 4751","ARMENIA","885859","Lectura Larga"],["SUPERMAX S.A.","30207346","AV. ARMENIA 4090","ARMENIA","1266149","Lectura Larga"],["MTPD Bº MOLINA PUNTA SET Nº 139","10270622","BO. MOLINA PTA","ARMENIA","1296749","T1"],["TELECOM ARGENTINA S.A.","30037674","AV. ARMENIA 2932","ARMENIA","1885915","Elster A1052"],["MTPD Bº MOLINA PUNTA SET Nº 402","10270654","BO. MOLINA PTA","ARMENIA","1930640","T1"],["MTPD B* PUJOL SET N° 1041","30112119","Z. SANCHEZ Y E. BAJAC SET 1041","ARMENIA","1930652","T1"],["MTPD Bº ITATI SET Nº133","10270608","ANGEL NAVEA 3800","ARMENIA","1941672","T1"],["MTPD Bº LOMAS DEL MIRADOR SET Nº17","10270611","BO. APIPE CALLE 39","ARMENIA","1941697","T1"],["AMX ARGENTINA S.A.","10270642","SEVILLA 5000","ARMENIA","2558841","Elster A1052"],["RIO PARANA TV  S.R.L.","10800829","CALLE ROQUE SANCHEZ  N¦  350","ARMENIA","3226638","Lectura Larga"],["TELECOM ARGENTINA S.A.","30045606","RIO CHICO S/Nº (Bº MOLINA PUNTA)","ARMENIA","3469249","T1"],["MTPD B° CANAL 13 - SET N°1275 –","30221772","LISBOA ENTRE BENITO LINCH Y GUIRALDES","ARMENIA","3531116","T1"],["CONS. EDIFICAR  S.A.","10801051","ESTADOS UNIDOS 725","ARMENIA","4003204","Lectura Larga"],["AMX ARGENTINA S.A.","10270439","AV. ARMENIA 2932","ARMENIA","4491755","T1"],["M.DESARROLLO SOCIAL CTES.MINISTERIO","30009057","MURCIA 59","ARMENIA","4519815","Lectura Larga"],["EL IMPENETRABLE S.R.L.","30039442","AV. LIBERTAD 6698","ARMENIA","4575049","Lectura Larga"],["JEMAN S.R.L.","30238968","AV. LIBERTAD 5291","ARMENIA","4637326","Lectura Larga"],["M.EDUCACION CTES.C.G.E.(TOTALIZADOR)","10801245","SAENZ CABA B¦ M. PUNTA","ARMENIA","5003283","Lectura Larga"],["PETROARMENIA S.R.L.","10801035","ONTIVERO Y ARMENIA","ARMENIA","5003385","Lectura Larga"],["A.N.SE.S. CAPITAL","30073677","AV. ARMENIA 3850","ARMENIA","24332189","SMART"],["INDUSTRIAL  GASEOSA  SRL.","10800048","AV. ARMENIA 4117","ARMENIA","24332228","IT330"],["DACUNDA HNOS. S.A.","10800623","AV. ARMENIA 3290","ARMENIA","24332283","IT330"],["U.N.NE. CAMPUS UNIVERSITARIO","10800775","Avda.  Libertad","ARMENIA","24332285","IT330"],["SHONKO S.A.","30091468","AV. LIBERTAD 6000","ARMENIA","29783416","SMART"],["CESHMA S.A.","30275964","RISUTTO 3525","ARMENIA","83559590","Lectura Larga Invertida"],["YUNQUIN ZHOU","30184135","CRISTO OBRERO 502","ARMENIA","251005591","Landys E330"],["CRISTALDO CRISTINA PAUBLINA","60062761","AV. ARMENIA 3750","ARMENIA","251005613","Landys E330"],["BISDORFF FUNDICOR","30198320","MARTIN FIERRO 524","ARMENIA","251005627","Landys E330"],["TELECOM ARGENTINA S.A.","10212841","LOS TULIPANES 445","ARMENIA","251005683","Landys E330"],["LA IGLESIA UNIVERSAL DEL REINO DE DIOS","30223188","AV. LIBERTAD 5225","ARMENIA","601029979","Ampy/Landys"],["TOTAL PHARMA S.R.L.","30153393","MEXICO 709","ARMENIA","601030007","Ampy/Landys"],["LA ALEMANA S.R.L.","30135038","AV. LIBERTAD 5289","ARMENIA","601030015","Ampy/Landys"],["NORFAR S.R.L.","30153389","AV. ARMENIA 3343","ARMENIA","601030030","Ampy/Landys"],["SUPERMERCADO PARADA CANGA S.A.","30179345","RIO CHICO 5830","ARMENIA","611000064","Ampy/Landys"],["ASOC. ARG. ADV. DEL SEPTIMO DIA","30138024","MEXICO 830","ARMENIA","611000083","Ampy/Landys"],["HABERKORN MARTIN S.R.L.","30193853","AV. LIBERTAD 5279","ARMENIA","611000140","Ampy/Landys"],["FELIPITO S.R.L.","60031395","RIO CHICO Y LAS DALIAS","ARMENIA","611000180","Ampy/Landys"],["TELECOM ARGENTINA S.A.","10270382","20 DE MAYO 755","ARMENIA","611000207","Ampy/Landys"],["FANG MEIJUAN","30307541","LAS MARGARITAS 762","ARMENIA","611000237","Ampy/Landys"],["DACUNDA MARIO DE JESUS","30212341","250 VIV.MZ. 60-14-6 C.115 M. PUNTA","ARMENIA","612002025","Ampy/Landys"],["DIA ARGENTINA S.A.","30136468","AV. LIBERTAD 5135","ARMENIA","612002047","Ampy/Landys"],["HUANG BIQIN","10445887","AV. GDOR. RUIZ 2436","ARMENIA","612005637","Ampy/Landys"],["LA ESTANCIERA S.R.L.","30163295","J.R. FERNANDEZ 270","ARMENIA","612005658","Ampy/Landys"],["RUIZ ESTEVEZ DIEGO","30139799","AV. LIBERTAD 5845","ARMENIA","612005747","Ampy/Landys"],["AYACUCHO  S.R.L.","10800893","AV. CENTENARIO 4350","AYACUCHO-CHACABUCO","515203","Lectura Larga"],["HE MINGCHANG","60115238","AV. CENTENARIO 4406","AYACUCHO-CHACABUCO","846871","Lectura Larga"],["SODERIA PONCHO VERDE S.R.L.","10801682","AV. CHACABUCO N¦ 1148","AYACUCHO-CHACABUCO","846931","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10800947","JUAN JOSE PASO 1100","AYACUCHO-CHACABUCO","885682","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60142718","RAUL ALFONSIN 3290","AYACUCHO-CHACABUCO","2518705","Lectura Larga"],["TELEFONICA MOVILES ARGENTINA S.A.","30150976","AV. ARTIGAS ESQ GDOR MARTINEZ","AYACUCHO-CHACABUCO","2794437","T1"],["TRI SOLE S.A.","60097199","AV. POMAR 900","AYACUCHO-CHACABUCO","3247587","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10800938","AV. AYACUCHO 3288","AYACUCHO-CHACABUCO","3288470","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60114855","AV. AYACUCHO 3288","AYACUCHO-CHACABUCO","3603130","Lectura Larga"],["YAPIRE S.R.L.","60178388","AV. PTE. RAUL ALFONSIN 3701","AYACUCHO-CHACABUCO","4323859","Lectura Larga"],["CTRO. DE COMPUTACION MEDICA NE S.A.","60160364","COLOMBIA 1249","AYACUCHO-CHACABUCO","4323869","Lectura Larga"],["SUPERMERCADOS PARADA CANGA S.A","10801167","AV. CENTENARIO 5398","AYACUCHO-CHACABUCO","4637317","Lectura Larga"],["P.JUDICIAL CTES.(TOTALIZADOR)","10801492","ESPARTA Y REPUBLICA DOMINICANA","AYACUCHO-CHACABUCO","83559636","Lectura Larga Invertida"],["HERCHEM S.A.S.U.","60187540","SAMUEL MORSE 955","AYACUCHO-CHACABUCO","251020993","Landys E330"],["FACOR S.R.L.","60188839","AV. LAPRIDA 768","AYACUCHO-CHACABUCO","251020996","Landys E330"],["M.C.C. TRIBUNAL DE FALTAS","60216973","ARTIGAS 1131","AYACUCHO-CHACABUCO","251029525","Landys E330"],["ZENG LONGCAI","60169821","AV. CHACABUCO 1220","AYACUCHO-CHACABUCO","601030006","Ampy/Landys"],["SCHAHOVSKOY JUAN ANGEL","60207501","AV. CENTENARIO 3610","AYACUCHO-CHACABUCO","601030020","Ampy/Landys"],["M.EDUCACION CTES.C.G.E.(TOTALIZADOR)","60007213","BRIO. SAN GERONIMO","AYACUCHO-CHACABUCO","601030022","Ampy/Landys"],["PETRO ITATI S.A.","60089637","AV. CENTENARIO 5240","AYACUCHO-CHACABUCO","612000129","Ampy/Landys"],["CTES. TENIS CLUB","60060880","SAN MARTIN 2600","AYACUCHO-CHACABUCO","612002018","Ampy/Landys"],["TENNIS CLUB","60057455","AV. AYACUCHO 2670","AYACUCHO-CHACABUCO","612002034","Ampy/Landys"],["TENNIS CLUB","60057452","AV. AYACUCHO 2650","AYACUCHO-CHACABUCO","612002035","Ampy/Landys"],["CORRIENTES TENNIS CLUB","60077999","AYACUCHO 2656","AYACUCHO-CHACABUCO","612002091","Ampy/Landys"],["DEPOT EXPRESS S.R.L.","60254185","AV RAUL ALFONSIN 4825","AYACUCHO-CHACABUCO","24332191","Lectura Larga Invertida"],["MTPD Bº PALOMA DE LA PAZ SET Nº 99","10270559","BO. PALOMA DE LA PAZ","CAZADORES","58535","T1"],["MTPD B° COSTA ESPERANZA SET N° 686","30162070","TURIN","CAZADORES","58536","T1"],["MTPD B°CIUDADES CORRENTINAS SET N°452","30162117","TURIN ESQ. RIO DE JANEIRO","CAZADORES","58545","T1"],["MTPD Bº LA OLLA SET Nº 465","10270552","VILLA LA OLLA","CAZADORES","83852","T1"],["MTPD Bº LA OLLA SET Nº 698","10270551","VILLA LA OLLA","CAZADORES","92197","T1"],["MTPD B° COSTA ESPERANZA  SET N° 449","30162075","S. DE BUSTAMANE Y NICARAGUA","CAZADORES","116729","T1"],["MTPD SET N° 1106","30166987","VESPUCIO ESQ.OJEDA","CAZADORES","116736","T1"],["MTPD B° LOMAS  SET N° 1105","30166978","FRIAS ESQ. TUPAC AMARU","CAZADORES","174984","T1"],["MTPD  - SET N° 330 -","30162596","TURIN ESQ. VERONA","CAZADORES","175930","T1"],["MTPD B° LOMA ALTA  SET N° 1104","30166969","F. ROMERO ESQ. T AMARU(Calle 215)","CAZADORES","175984","T1"],["SUPERMAX S.A.","60149283","AV. NICOLAS AVELLANEDA 4052","CAZADORES","515186","Lectura Larga"],["MTPD Bº LA OLLA SET Nº 242","10270562","VILLA LA OLLA","CAZADORES","880216","T1"],["M.EDUCACION CTES.C.G.E.ESC.955 LIB.AMER.","60099556","AV. JUAN DOMINGO PERON 5436","CAZADORES","885806","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","60015596","MILAN E/CERDEÑA Y RUVEDA","CAZADORES","885821","Lectura Larga"],["PEREZ HORACIO BENIGNO","60017492","LAMADRID 3477","CAZADORES","885885","Lectura Larga"],["OGNIO  ANTONELLA","10801233","CAZADORES CORRENTINOS ESQ. TACUARI","CAZADORES","907005","Lectura Larga"],["MTPD Bº LA OLLA SET Nº 473","10270617","VILLA LA OLLA","CAZADORES","1941714","T1"],["MTPD Bº LA OLLA SET Nº 621","10270561","BO. PALOMA DE LA PAZ","CAZADORES","1941715","T1"],["MTPD Bº LA OLLA  SET Nº 66","10270563","VILLA LA OLLA","CAZADORES","1941721","T1"],["ESCUELA SANTA TERESITA","60066031","LAMADRID 3028","CAZADORES","2518734","Lectura Larga"],["SUPERMERCADOS PARADA CANGA S.A","10800070","AV. C. CORRENT 4400","CAZADORES","3288398","Lectura Larga"],["DEPOT EXPRESS S.R.L.","60140810","AV. J.D.PERON Y MONTECARLO","CAZADORES","3377300","Lectura Larga"],["TELEFONICAS MOVILES ARGENTINA S.A.","30173357","GUEMES 2189","CAZADORES","4183271","T1"],["AMX ARGENTINA S.A.","30218020","NIÑO JESUS 2178","CAZADORES","4920853","T1"],["SANABRIA LUIS","10801537","J. R. VIDAL 2310","CAZADORES","5003246","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801276","LARREA Y RESOAGLI - LAG. SECA","CAZADORES","5003254","Lectura Larga"],["BANCO DE CORRIENTES S.A.","60054265","LAMADRID ESQ. MEDRANO","CAZADORES","5003380","Lectura Larga"],["DILCAR S.A.","60093701","AV CAZADORES CORRENTINOS 3620","CAZADORES","5003383","Lectura Larga"],["TACUARI CARNES S.R.L","30291986","LAMADRID 3730","CAZADORES","24236859","IT410"],["P.JUDICIAL CTES.(TOTALIZADOR)","10801707","AV. J. R. VIDAL N¦ 2080","CAZADORES","24332193","SMART"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","60300343","J R VIDAL","CAZADORES","24332209","SMART"],["TELEFONICA MOVILES ARG. S.A.","10212918","RENACIMIENTO/VERONA Y SAN F. DE ASI","CAZADORES","96035020","MT174"],["IGLESIA EVANGELICA PENTECOSTAL ASAMBLEA DE DIOS \"REFIDIM\"","60079877","SANCHEZ DE BUSTAMANTE 2396","CAZADORES","251005584","Landys E330"],["PILARES S.R.L.","60065683","AV. CHACABUCO 2502","CAZADORES","251025175","Landys E330"],["HE XIUYU","10801516","CAZADORES CORRENTINOS 3067","CAZADORES","251038335","Landys E330"],["SANABRIA JORGE ALFREDO HERMES","60218004","AV. NICOLAS AVELLANEDA 4399","CAZADORES","251046903","Landys E330"],["AMX ARGENTINA S.A.","60151581","NECOCHEA Y RECONQUISTA","CAZADORES","251046912","Landys E330"],["DE PRIMERA S.R.L. sñra vaca","10801614","CHACABUCO 2663","CAZADORES","251046948","Landys E330"],["SUPERMERCADOS  PARADA CANGA S.A.","10801421","A. DUMAS ESQ. FLORENCIA","CAZADORES","601029922","Ampy/Landys"],["MAJUFAR S.R.L.","60138189","AV. TENIENTE GENERAL PERON 5420","CAZADORES","601029958","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60135275","RECONQUISTA ESQ NECOCHEA","CAZADORES","601029994","Ampy/Landys"],["MAJUFAR S.R.L.","60138275","AV. NICOLAS AVELLANEDA 4436","CAZADORES","601030013","Ampy/Landys"],["CANGA PANIFICADOS S.A.","60213797","DARRAGUEIRA 2348","CAZADORES","611000153","Ampy/Landys"],["HITO S.A.","60034279","AV. CAZADORES CORRENTINOS 4050","CAZADORES","612000087","Ampy/Landys"],["JEMAN S.R.L.","60095072","AV. CAZ. CORRENTINOS 3502","CAZADORES","612002011","Ampy/Landys"],["PANIFICADOS MARTIN S.R.L.","10801538","CHACABUCO 1750","CAZADORES","612002024","Ampy/Landys"],["LA ALEMANA S.R.L.","60144308","AV. NICOLAS AVELLANEDA 3905","CAZADORES","612005705","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60108057","AV. CAZADORES CORRENTINOS 3675","CAZADORES","612005722","Ampy/Landys"],["NORFAR S.R.L.","60108960","AV. CAZ. CORRENTINOS 4295","CAZADORES","612005726","Ampy/Landys"],["HABERKORN MARTIN S.R.L.","60162198","AV CAZADORES CORRENTINOS 3038","CAZADORES","612000109","Ampy/Landys"],["JEMAN S.R.L.","60168167","GUEMES 2260","CAZADORES","4323883","Lectura Larga"],["FENGCHAI FU","60168925","S. DE BUSTAMANTE 2681","CAZADORES","251005651","Landys E330"],["EXPRESS S.R.L.","30216058","AV. NICOLAS AVELLANEDA 3802","CAZADORES","24236980","IT410"],["AMX ARGENTINA S.A.","30275488","CARTAGENA 4297","CAZADORES","24331592","SMART"],["YANG YUNMING","60260031","AV. CAZADORES CORRENTINOS 3872","CAZADORES","251025189","Landys E330"],["ZHOU JILIN","30305096","CALLE 166 (CADIZ) ESQ PIROVANO 3780","CAZADORES","611000141","Ampy/Landys"],["M.C.C. MODULOS DE COMIDA","30314858","S. BUSTAMANTE E/CARACAS Y ALFONSIN","AYACUCHO-CHACABUCO","24236908","IT410"],["SUPERMERCADO PARADA CANGA S.A.","30185851","AV. CENTENARIO 3496","AYACUCHO-CHACABUCO","24236910","IT410"],["WAL-MART ARGENTINA S.R.L.","10270542","19 DE MAYO S/N","AYACUCHO-CHACABUCO","24237204","IT330"],["BANCO DE CORRIENTES S.A.","30343490","GREGORIO POMAR 851","AYACUCHO-CHACABUCO","24332181","IT330"],["CASINOS DEL LITORAL S.A.","10800583","AYACUCHO Y TACUARI","AYACUCHO-CHACABUCO","24332284","IT330"],["DIRECCION NACIONAL DE VIALIDAD CAPITAL","10270228","CHACO 758","CENTRO 1","80373","T1"],["VILLALVA ALEJANDRA ELIZABETH","60027857","AV. COSTANERA 1160","CENTRO 1","885676","Lectura Larga"],["TOMOGRAFIA COMP.S.A","10212667","BELGRANO 264","CENTRO 1","1940453","T1"],["U.N.NE. OBRA SOCIAL","10800962","SAN LUIS 535","CENTRO 1","2518709","Lectura Larga"],["RESTO BAR & LOUGE S.R.L.","30056832","PEDRO QUEVEDO Y AV. COSTANERA","CENTRO 1","2518711","Lectura Larga"],["OSDE","30065086","MISIONES 966","CENTRO 1","2543373","Lectura Larga"],["ENTRETENIMIENTOS Y SERVICIOS S.A.","30088078","CARLOS PELLEGRINI 451","CENTRO 1","2773303","Lectura Larga"],["DE LA COSTA S.A.","30088053","CARLOS PELLEGRINI 451","CENTRO 1","2773304","Lectura Larga"],["NATALIO LIBER AIDES","10801011","BELGRANO 474","CENTRO 1","4003133","Lectura Larga"],["LOS CRIOS S.H.","10801545","JUNIN 498","CENTRO 1","4003153","Lectura Larga"],["CAPILLA MARIA AUXILIADORA","10801099","SAN MARTIN 66","CENTRO 1","4003174","Lectura Larga"],["TELEFONICA MOVILES ARGENTINA S.A","30168267","HIPOLITO IRIGOYEN  N° 56","CENTRO 1","4183671","T1"],["TELEFONICAS MOVILES ARGENTINA S.A.","30173355","TUCUMAN 1167","CENTRO 1","4233428","T1"],["CONSORCIO TORRE COSTANERA","10270319","25 DE MAYO 513","CENTRO 1","4275592","Lectura Larga"],["CONSORCIO DE COPROPIET. DEL EDIFICIO JEN","30290744","BELGRANO 251","CENTRO 1","4323875","Lectura Larga"],["SUPERMAX S.A.","30198593","DON BOSCO 1143","CENTRO 1","4575051","Lectura Larga"],["GE XING YE","10801161","MISIONES 1240","CENTRO 1","5003333","Lectura Larga"],["AIDES M.C.C. de","10801339","ENTRE RIOS 1170","CENTRO 1","5003364","Lectura Larga"],["RESTO GRILL S.A.","30039026","PEDRO QUEVEDO 10","CENTRO 1","5003381","Lectura Larga"],["POLICIA FEDERAL-CAPITAL","10801364","PLACIDO MARTINEZ 750","CENTRO 1","5003406","Lectura Larga"],["MAYER WILLIAM CARLOS","60165151","BOLIVAR 198 P 3","CENTRO 1","5107240","T1"],["DEL PILAR S.A.","30137278","SAN MARTIN 555","CENTRO 1","24331631","SMART"],["DEPOT EXPRESS S.R.L.","30163097","BOLIVAR 352","CENTRO 1","24332140","SMART"],["CASINOS DEL LITORAL S.A.","10800993","C. PELLEGRINI 305","CENTRO 1","24332203","SMART"],["DACUNDA HNOS. S.A.","10800017","BELGRANO 683","CENTRO 1","24332260","IT410"],["ENTRETENIMIENTOS Y SERVICIOS S.A.","30021760","ENTRE RIOS 650","CENTRO 1","51568476","Lectura Larga Invertida"],["CAS. DEL LITORAL SA - HOCO SA UTE","30014242","ENTRE RIOS 650","CENTRO 1","51568489","Lectura Larga Invertida"],["GARDEN S.R.L PATAGONIA","30243078","AV. COSTANERA 1200","CENTRO 1","251029516","Landys E330"],["RELATS VICTORIA VALENTINA","30155707","QUEVEDO 30","CENTRO 1","611000029","Ampy/Landys"],["DIRECCION NACIONAL DE VIALIDAD CAPITAL","10801594","CHACO 748","CENTRO 1","611000152","Ampy/Landys"],["RELATS VICTORIA VALENTINA","30155746","QUEVEDO 30","CENTRO 1","611000234","Ampy/Landys"],["DE LLANO MUJICA CARLOS MARIA","60031075","MISIONES 1353","CENTRO 1","612000104","Ampy/Landys"],["INSTITUCION SALESIANA PIO XI","30115327","SAN MARTIN 62","CENTRO 1","612005690","Ampy/Landys"],["GR.AC SAS","30212110","AV. COSTANERA 1271","CENTRO 1","612005730","Ampy/Landys"],["JUFEC S.A.","10800006","CATAMARCA 658","CENTRO 2","272390","Lectura Larga"],["M.EDUCACION CTES.MINISTERIO(TOTALIZADOR)","60268330","RIOJA 663","CENTRO 2","846916","Lectura Larga"],["TALLERES EL TUNEL S.A.","10411452","SAN JUAN 532","CENTRO 2","885681","Lectura Larga"],["REPUBLICA ARABE SIRIA 2945 FID","10443675","PLACIDO MARTINEZ 1223","CENTRO 2","885695","Lectura Larga"],["P.JUDICIAL CTES.(TOTALIZADOR)","60080373","QUINTANA 1077","CENTRO 2","885727","Lectura Larga"],["AUTOMOVIL CLUB ARGENTINO","10800009","MENDOZA 588","CENTRO 2","997376","Lectura Larga"],["M.C.C. PALACIO MUNICIPAL","10800096","25 DE MAYO 1134","CENTRO 2","1266145","Lectura Larga"],["PROYECTO AGUARA S.A.","60026114","LA RIOJA 442","CENTRO 2","1396163","Lectura Larga"],["M.OBRAS CTES.DIR.TRANSP.FLUVIAL Y PTOS.","10800083","SAN JUAN Y COSTANERA","CENTRO 2","2235478","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","60249191","AV VERA 1377","CENTRO 2","2235502","Lectura Larga"],["DESARROLLOS NEA S.R.L.","30110631","CAA GUAZU 346","CENTRO 2","2960140","T1"],["GIGARED S.A.  (FTES. REL.)","30002645","FUENTE 1","CENTRO 2","2970892","T1"],["A.MU.GE.NAL","10800956","SAN LORENZO 635","CENTRO 2","3247608","Lectura Larga"],["TRANSPORTE MINISTERIO DE","10800080","CATAMARCA Y COSTANERA","CENTRO 2","3288393","Lectura Larga"],["CENTRO DE JUBILADOS Y PENSIONADOS DE LA PROVINCIA DE CORRIENTES","10800012","LA RIOJA 670","CENTRO 2","3288438","Lectura Larga"],["INVICO (TOTALIZADOR)","10800095","SAN JUAN 460","CENTRO 2","3288450","Lectura Larga"],["P.JUDICIAL CTES.(TOTALIZADOR)","10801155","PLACIDO MARTINEZ 1068","CENTRO 2","3288468","Lectura Larga"],["CLINICA DEL IBERA","10801194","CORDOBA 420","CENTRO 2","3288472","Lectura Larga"],["TEATRO VERA INST. DE CULTURA CTES","10801197","SAN JUAN 637","CENTRO 2","3603099","Lectura Larga"],["M.EDUCACION CTES.C.G.E.ADMINISTRACION","10800085","CATAMARCA 640","CENTRO 2","3603100","Lectura Larga"],["BANCO HIPOTECARIO NACIONAL","10801036","25 DE MAYO ESQ. RIOJA","CENTRO 2","3603116","Lectura Larga"],["TELEFONICA MOVILES ARGENTINA S.A.","30131967","Placido Martinez N°1098","CENTRO 2","3764252","T1"],["LOSLYN S.A","30306714","SAN JUAN 690","CENTRO 2","4575071","Lectura Larga"],["M.COORDINACION CTES.PALACIO","60077826","25 DE MAYO 1041/57","CENTRO 2","5003251","Lectura Larga"],["J C R   S.A.","10801093","CORDOBA 300","CENTRO 2","5003357","Lectura Larga"],["CATERING LA CAPILLA S.A.","60032793","PLACIDO MARTINEZ 1102","CENTRO 2","5003376","Lectura Larga"],["CORSAL S.A.","10801223","SAN JUAN 656","CENTRO 2","5003391","Lectura Larga"],["DE BONIS Y CIA","10801288","LA RIOJA 542","CENTRO 2","5003394","Lectura Larga"],["ROMERO FERIS RAUL ROLANDO","10800998","MENDOZA 549","CENTRO 2","24236861","IT410"],["TELECOM ARGENTINA S.A.","10212840","PLACIDO MARTINEZ 1050","CENTRO 2","24331663","IT410"],["BANCO SANTANDER RIO S.A.","10800834","SAN JUAN 695","CENTRO 2","24332186","IT330"],["INST. ENSEÑANZA PRIVADA YAPEYU","10800831","AV. ITALIA 432","CENTRO 2","24332188","SMART"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60107907","PLACIDO MARTINEZ 1044","CENTRO 2","83559583","Lectura Larga Invertida"],["COLEGIO SAN JOSE","10801090","25 DE MAYO 1014","CENTRO 2","83559626","Lectura Larga Invertida"],["P.JUDICIAL CTES.(TOTALIZADOR)","60177038","25 DE MAYO 1589","CENTRO 2","251005654","Landys E330"],["DEPOT EXPRESS S.R.L.","60177793","SAN LORENZO 605","CENTRO 2","251005659","Landys E330"],["AMX ARGENTINA S.A.","60296884","RIOJA 572","CENTRO 2","251020984","Landys E330"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60090264","CORDOBA 640","CENTRO 2","251029527","Landys E330"],["SCHAHOVSKOY DANILO IVAN","60231561","AV. ITALIA 455","CENTRO 2","251038327","Landys E330"],["SUPERMAX S.A.","60253481","QUINTANA 1038","CENTRO 2","251046944","Landys E330"],["LA TOBA S.A.","60136609","25 DE MAYO 1027","CENTRO 2","601029997","Ampy/Landys"],["MAJUFAR S.R.L.","60149115","25 DE MAYO 1098","CENTRO 2","601030062","Ampy/Landys"],["GANFAR S.R.L.","60183169","AV. JUAN DE VERA 1396","CENTRO 2","601030069","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10416438","25 DE MAYO 1290","CENTRO 2","611000003","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10161473","CORDOBA 640","CENTRO 2","611000085","Ampy/Landys"],["PANIFICADOS MARTIN S.R.L.","10801494","RIOJA  601 ESQ. 25 DE MAYO","CENTRO 2","611000126","Ampy/Landys"],["CLINICA MATERNAL DEL IBERA S.A","10801621","CORDOBA 442 - 46","CENTRO 2","611000173","Ampy/Landys"],["M.C.C. ANEXO OFICINA CONSEJO DELIBERANTE","60108115","25 DE MAYO 1099","CENTRO 2","611000183","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10801417","CORDOBA 606","CENTRO 2","611000213","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60018859","CORDOBA 540","CENTRO 2","612000079","Ampy/Landys"],["A.F.I.P.-D.G.IMPOSITIVA-CORRIENTES","10801366","AVDA. ITALIA 385","CENTRO 2","612002065","Ampy/Landys"],["CENTRO MÉDICO DEL PARQUE S.R.L","60264658","SAN LORENZO 570","CENTRO 2","612002096","Ampy/Landys"],["M.SALUD PUBLICA CTES.CAPITAL","60086586","CATAMARCA 512","CENTRO 2","612005624","Ampy/Landys"],["P.LEGISLATIVO CTES.SENADO-ADMINISTRACION","60101668","25 DE MAYO 999","CENTRO 2","612005641","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10049166","CORDOBA 640","CENTRO 2","612005725","Ampy/Landys"],["DEPOT EXPRESS SRL","30318400","CATAMARCA ESQ QUINTANA","CENTRO 2","611000250","Ampy/Landys"],["DPEC USO PROPIO","10446166","SAN MARTIN 907","CENTRO 3","59034","Lectura Larga"],["IGLESIA UNIVERSAL DEL REINO DE","10801408","SAN MARTIN 946","CENTRO 3","82156","Lectura Larga"],["P.LEGISLATIVO CTES.PALACIO-CAPITAL","10800087","SALTA 545","CENTRO 3","272381","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.ADMINISTRAC.","10049201","C. PELLEGRINI 912","CENTRO 3","846913","Lectura Larga"],["DIARIO EL LITORAL","10801048","LA RIOJA 1008","CENTRO 3","885694","Lectura Larga"],["M.SEGURIDAD CTES.PALACIO","30107139","QUINTANA 930","CENTRO 3","885749","Lectura Larga"],["P.JUDICIAL CTES.(TOTALIZADOR)","60045690","CARLOS PELLEGRINI 894","CENTRO 3","2235509","Lectura Larga"],["M.HACIENDA CTES.(TOTALIZADOR)","10801296","25 DE MAYO 918","CENTRO 3","2235512","Lectura Larga"],["CLUB SAN MARTIN","30091825","MORENO 955","CENTRO 3","2518735","Lectura Larga"],["CLUB SAN MARTIN","10801211","SALTA 1357","CENTRO 3","2543354","Lectura Larga"],["M.JUSTICIA CTES. HOGAR MISERICORDIA","30257923","9 DE JULIO 796","CENTRO 3","3226621","Lectura Larga"],["M.EDUCACION CTES.C.G.E.(TOTALIZADOR)","11801345","SALTA 731","CENTRO 3","3288414","Lectura Larga"],["INVICO (TOTALIZADOR)","10800828","SAN MARTIN 986","CENTRO 3","3288458","Lectura Larga"],["M.SECRETARIA GOB.CTES.(TOTALIZADOR)","10800086","SALTA 575","CENTRO 3","3288469","Lectura Larga"],["EDUCAR S.R.L.","10801212","QUINTANA 947","CENTRO 3","3288474","Prosumidor"],["M.HACIENDA CTES.(TOTALIZADOR)","10800090","TUCUMAN 1164","CENTRO 3","3294143","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801279","TUCUMAN 715","CENTRO 3","4149997","Lectura Larga"],["M.SECRETARIA GOB.CTES.CASA DE GOBIERNO","10395842","25 DE MAYO 927","CENTRO 3","4275579","Lectura Larga"],["U.N.NE. RECTORADO","10800077","25 DE MAYO 868","CENTRO 3","4275599","Lectura Larga"],["P.JUDICIAL CTES.(TOTALIZADOR)","10801350","C. PELLEGRINI 940","CENTRO 3","4323683","Lectura Larga"],["P.JUDICIAL CTES.(TOTALIZADOR)","10800949","SALTA 695","CENTRO 3","4575063","Lectura Larga"],["EDIT JUAN ROMERO SA","10800014","H. YRIGOYEN 975","CENTRO 3","4695847","Lectura Larga"],["IGLESIA CRUZ DE LOS MILAGROS","60032319","BELGRANO 850","CENTRO 3","5003248","Lectura Larga"],["M.HACIENDA CTES.(TOTALIZADOR)","10801264","SALTA 647","CENTRO 3","5003253","Lectura Larga"],["FARMACIA SANTA CRUZ SCS","10392437","SAN MARTIN 995","CENTRO 3","5003280","Lectura Larga"],["M.SEGURIDAD CTES.POLICIA-CAPITAL-JEFATUR","10801299","BUENOS AIRES 449","CENTRO 3","5003334","Lectura Larga"],["M.DESARROLLO SOCIAL CTES.(TOTALIZADOR)","11801394","TUCUMAN 1145","CENTRO 3","5003398","Lectura Larga"],["M.HACIENDA CTES.(TOTALIZADOR)","10801293","SALTA 655","CENTRO 3","5003399","Lectura Larga"],["DE VIGILI RODOLFO GUSTAVO","10401061","SALTA 648","CENTRO 3","24331525","SMART"],["FARMALIFE S.A.","30128584","PELLEGRINI 645","CENTRO 3","51568477","Lectura Larga Invertida"],["PARROQUIA NTRA. SRA.DE LA MERCED I.C.","30264199","BUENOS AIRES 647","CENTRO 3","51568478","Lectura Larga Invertida"],["BANCO PATAGONIA S.A.","30154876","JUNIN 859/77","CENTRO 3","51568504","Lectura Larga Invertida"],["SUPERMAX  S.A.","10801413","PELLEGRINI 779","CENTRO 3","51568509","Lectura Larga Invertida"],["M.EDUCACION CTES.C.G.E.(TOTALIZADOR)","60148822","TUCUMAN 825","CENTRO 3","51609728","Lectura Larga Invertida"],["EDITORIAL CORRENTINA SA","10800013","H. YRIGOYEN 835","CENTRO 3","83559586","Lectura Larga Invertida"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","11801344","SALTA 1150","CENTRO 3","83559595","Lectura Larga Invertida"],["BRUNEL JUAN JOSE FELIPE","10432728","SALTA 656","CENTRO 3","251005587","Landys E330"],["DEPOT EXPRESS S.R.L.","30240777","SAN MARTIN 910","CENTRO 3","251005677","Landys E330"],["FRIO NEA SASU","30277481","HIPOLITO IRIGOYEN 931","CENTRO 3","251029550","Landys E330"],["DEPOT EXPRESS S.R.L","30293652","TUCUMAN 1032","CENTRO 3","251046945","Landys E330"],["MANITOS S.R.L.","30178543","TUCUMAN 592","CENTRO 3","601029921","Ampy/Landys"],["VDC INTERNACIONAL SRL","30136683","9 DE JULIO 611","CENTRO 3","601029942","Ampy/Landys"],["LX ARGENTINA S.A.","30235264","PELLEGRINI 727","CENTRO 3","601029974","Ampy/Landys"],["ESMERALDA GROUP S.A","30153291","BUENOS AIRES 1280","CENTRO 3","601029981","Ampy/Landys"],["BUENAS MIGAS S.R.L","30093165","JUNIN 655","CENTRO 3","601029993","Ampy/Landys"],["TELECOM ARGENTINA S.A.","30164535","JUNIN 824","CENTRO 3","601030018","Ampy/Landys"],["M.HACIENDA CTES.(TOTALIZADOR)","60020986","BUENOS AIRES 766","CENTRO 3","611000053","Ampy/Landys"],["NUEVO HORIZONTE S.A.","30294036","TUCUMAN 633","CENTRO 3","612002016","Ampy/Landys"],["ROMERO ARTAZA LISANDRO ARIEL","10378698","RIOJA 1213","CENTRO 3","612005633","Ampy/Landys"],["PASCARELLA JORGE FABIAN","30022607","BOLIVAR 1021","CENTRO 3","612005644","Ampy/Landys"],["PASCARELLA JORGE FABIAN","30114638","BOLIVAR 1021 P.A.","CENTRO 3","612005688","Ampy/Landys"],["CONS.PROF.ING.ARQ Y AGR.","60110466","RIOJA 1240","CENTRO 3","612005727","Ampy/Landys"],["BANCO NACION-CAPITAL","10800075","9 DE JULIO 1298","CENTRO 4","176006","Lectura Larga"],["P.JUDICIAL CTES.CAPITAL-SUP.TRI.JUSTICIA","10270687","C. PELLEGRINI 1065","CENTRO 4","515197","Lectura Larga"],["AMX ARGENTINA S.A.","10270069","9 DE JULIO 1384","CENTRO 4","810063","T1"],["LA RED DIGITAL COMUNICACIONES","10270477","C. PELLEGRINI 1029","CENTRO 4","885688","Lectura Larga"],["MONTEGO S.R.L.","60119693","LA RIOJA 785","CENTRO 4","885690","Lectura Larga"],["GOURMETS S.A.","10800976","9 DE JULIO 1198","CENTRO 4","885779","Lectura Larga"],["INSTITUTO DE CULTURA DE CORRIENTES","30341004","9 DE JULIO 1098","CENTRO 4","1333555","Lectura Larga"],["U.N.NE. FAC.CIEN.EXAC.NAT. Y AGRIM.","10800076","9 DE JULIO 1449","CENTRO 4","2543378","Lectura Larga"],["TC 2000 DIAG. POR IMAGENES S.R","10400153","CATAMARCA 744","CENTRO 4","3226624","Lectura Larga"],["ICBC ARGENTINA S.A.","60082621","PELLEGRINI 1098","CENTRO 4","3288442","Lectura Larga"],["DE APELACIONES CAMARA FEDERAL","10800081","C. PELLEGRINI 999","CENTRO 4","3288455","Lectura Larga"],["E.A.BALBI E HJOS.SA","10800011","9 DE JULIO 1154","CENTRO 4","3443982","Lectura Larga"],["TC 2000 DIAGNOSTICO POR IMAGENES S.R.L.","60114793","CATAMARCA 744","CENTRO 4","3497213","Lectura Larga"],["X U P S.A.","60159409","9 DE JULIO 1190","CENTRO 4","4275598","Lectura Larga"],["TARJETA NARANJA S.A.","10800966","C. PELLEGRINI 1116","CENTRO 4","4722955","Lectura Larga"],["HSBC BANK ARGENTINA SA","60072852","CARLOS PELLEGRINI 1188","CENTRO 4","5003296","Lectura Larga"],["BANCO MACRO SOCIEDAD ANONIMA","10801042","SAN JUAN 732","CENTRO 4","5003369","Lectura Larga"],["BANCO DE GALICIA","10800391","CORDOBA 870","CENTRO 4","24237213","IT330"],["M.HACIENDA CTES.CAPITAL-CATASTRO","60025589","9 DE JULIO 1536","CENTRO 4","24332178","SMART"],["SANATORIO DEL NORTE S.R.L.","60056470","C. PELLEGRINI 1358","CENTRO 4","24332192","SMART"],["BANCO DE CORRIENTES S.A.","10800369","9 DE JULIO 1036","CENTRO 4","24332222","IT330"],["P.JUDICIAL CTES.CAPITAL-SUP.TRI.JUSTICIA","10800589","9 DE JULIO 1099","CENTRO 4","24332223","IT330"],["AMIGO MARCELO JAVIER","30206378","PELLEGRINI 1338","CENTRO 4","24332235","SMART"],["COLEGIO SAN JOSE","10801710","PELLEGRINI N¦ 1057","CENTRO 4","61100288","Ampy/Landys"],["BANCO DE CORRIENTES S.A","60243129","CORDOBA 729","CENTRO 4","83559622","Lectura Larga Invertida"],["NUEVO BANCO DE ENTRE RIOS S.A.","10409388","9 DE JULIO 1301","CENTRO 4","251021000","Landys E330"],["LT7 S.A.S.","10800999","RIOJA 743","CENTRO 4","251046918","Landys E330"],["BOERO ARIEL Y LAMPERTI CANDELA ASOC. S.","60267891","9 DE JULIO 1011","CENTRO 4","251046931","Landys E330"],["RAMEL S.A.","60117871","MENDOZA 750","CENTRO 4","601029944","Ampy/Landys"],["ASOCIACION MUTUAL DE EMPLEADOS","10801583","9 DE JULIO 1136 PB","CENTRO 4","611000015","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60099097","PELLEGRINI 1553","CENTRO 4","611000077","Ampy/Landys"],["EDUCAR S.R.L.","60148500","PELLEGRINI 1267","CENTRO 4","611000090","Ampy/Landys"],["RAMEL S.A. (EN FORMACION)","60047345","CARLOS PELLEGRINI 1296","CENTRO 4","611000169","Ampy/Landys"],["M.INDUSTRIA T.C.CTES.CAPITAL-S.C.D.C.","60036026","CARLOS PELLEGRINI 1024","CENTRO 4","612000063","Ampy/Landys"],["FACULTAD DE CS. EXACTAS Y NAT Y AGRIM","60253516","9 DE JULIO 1449","CENTRO 4","612000070","Ampy/Landys"],["AUDIOCENTER S.R.L.","60089926","MENDOZA 763/65","CENTRO 4","612000134","Ampy/Landys"],["DEPOT EXPRESS S.R.L.","60190202","CATAMARCA 701","CENTRO 4","612002030","Ampy/Landys"],["ROMERO ACUÑA LUCRECIA MONICA","60072776","RIOJA 730","CENTRO 4","612002058","Ampy/Landys"],["CONVENIOS S.A.","10448741","9 DE JULIO 1223","CENTRO 4","612005645","Ampy/Landys"],["BOTELLO GUILLERMO JOSE","10117019","SAN MARTIN 1282","CENTRO 5","906955","Lectura Larga"],["TELEFONICA MOVILES ARG. S.A.","10432815","CATAMARCA 1361","CENTRO 5","974726","T1"],["INSTITUTO DE CARDIOLOGÍA DE CORRIENTES","30014821","BOLIVAR 1334","CENTRO 5","1266152","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10801201","MARIANO MORENO 1290","CENTRO 5","1396170","Lectura Larga"],["MUTUAL DE EMPL. PUBLICOS CONFIANZA","30065900","MENDOZA 1149","CENTRO 5","2543372","Lectura Larga"],["MUTUAL DE EMP. PUBLICOS \"CONFI","60058159","MENDOZA 1127","CENTRO 5","2543388","Lectura Larga"],["CORREO OFICIAL DE LA REP. ARG. S.A.","10800904","SAN MARTIN 1057","CENTRO 5","2802390","Lectura Larga"],["GUMA S.R.L.","30169839","MENDOZA 1062","CENTRO 5","2945862","T1"],["FUNCACORR","10800365","BOLIVAR 1334","CENTRO 5","3226629","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801352","BELGRANO Y MENDOZA","CENTRO 5","3288478","Lectura Larga"],["U.N.NE. FACULTAD MEDICINA","10800079","MENDOZA 1455","CENTRO 5","4323855","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60080245","HOSPITAL ESCUELA  ( RIVAD. Y CORD.)","CENTRO 5","4323858","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60209262","RIVADAVIA 1200","CENTRO 5","4637324","Lectura Larga"],["INSTITUTO DE CARDIOLOGIA DE CTES","30253166","BELGRANO 1385","CENTRO 5","4697960","Lectura Larga"],["INSTITUTO DE CARDIOLOGIA DE CTES","30253142","BELGRANO 1381","CENTRO 5","4697962","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10801202","BELGRANO 1351","CENTRO 5","5003281","Lectura Larga"],["DUE S.A.","30313995","CORDOBA 1194","CENTRO 5","24237021","IT410 - PROSUMIDOR"],["TELECOM ARG. S.A.","10800057","CATAMARCA 1361","CENTRO 5","24332127","SMART"],["DEPOT EXPRESS S.R.L.","30190869","MORENO 1350","CENTRO 5","24332170","SMART"],["FUNCACORR","10800366","BOLIVAR 1334","CENTRO 5","24332177","IT410"],["CONSORCIO IMPERIAL V","30191564","MENDOZA 1265","CENTRO 5","51568492","Lectura Larga Invertida"],["PODER JUDICIAL NACIONAL CAPITAL","30272510","SAN JUAN 1060","CENTRO 5","83559607","Lectura Larga Invertida"],["CLSG LA SEGUNDA","30184282","MARIANO MORENO 1340","CENTRO 5","251005586","Landys E330"],["FUNCACORR","30040467","MENDOZA 1235/9","CENTRO 5","251046950","Landys E330"],["MAJUFAR S.R.L.","30173295","MENDOZA 1111","CENTRO 5","601030059","Ampy/Landys"],["SCHIAVI PEDRO ANTONIO","30196729","CORDOBA 1463","CENTRO 5","611000093","Ampy/Landys"],["ASTRO APART HOTEL S.A.","30049669","BOLIVAR 1279","CENTRO 5","611000130","Ampy/Landys"],["SANTARELLI  EMA MATILDE","30085754","CORDOBA 1085","CENTRO 5","611000143","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10212545","CATAMARCA 1200","CENTRO 5","611000296","Ampy/Landys"],["BENITEZ MARCELO GUSTAVO","10414846","BELGRANO 1402","CENTRO 5","611000314","Ampy/Landys"],["FILOMENA S.R.L.","30220714","BOLIVAR 1301","CENTRO 5","612002033","Ampy/Landys"],["FUNCACORR","30321048","BOLIVAR 1323","CENTRO 5","251038323","Landys E330"],["PREVISORA DEL PARANA S.R.L.","60285304","SAN JUAN 1491","CENTRO 5","515162","ALPHA II - Prosumidor"],["TELEFONICA DE ARGENTINA S.A.","10800670","VELEZ SARSFIELD 1454","CENTRO 6","82134","Lectura Larga"],["GONZALES JUAN EDMUNDO","10256119","BOLIVAR 2344","CENTRO 6","885677","Lectura Larga"],["CASINOS DE MISIONES S.A.","10411338","C. PELLEGRINI 1949","CENTRO 6","885849","Lectura Larga"],["LAZAROFF PABLO ERNESTO","10392441","H. YRIGOYEN 2301","CENTRO 6","885861","Lectura Larga"],["M.C.C. CAJA DE PRESTAMOS","60079595","BRASIL 1269","CENTRO 6","1333533","Prosumidor"],["CTRO. DE COMPUTACION MEDICA NE S.A.","60039316","SAN MARTIN 2473","CENTRO 6","2235484","Lectura Larga"],["DACUNDA HNOS. S.A.","10800032","H. YRIGOYEN 1901","CENTRO 6","3226637","Lectura Larga"],["DACUNDA HNOS. S.A.","10800061","BELGRANO 2216","CENTRO 6","3288392","Lectura Larga"],["M.C.C. EX MERCADO EL PISO","10801355","BOLIVAR 2155","CENTRO 6","3288396","Lectura Larga"],["M.EDUCACION CTES.D.NIV.SUP.I.SERV.SOCIAL","60085243","IRIGOYEN 2145","CENTRO 6","3288460","Lectura Larga"],["IOSCOR CAPITAL","30217838","URUGUAY 841","CENTRO 6","4275580","Lectura Larga"],["DACUNDA HNOS. S.A.","10800030","PARAGUAY 1560","CENTRO 6","4275591","Lectura Larga"],["TATU S.A.","60165849","ROCA 1064","CENTRO 6","4323878","Lectura Larga"],["SINDICATO DE LUZ Y FUERZA CTES","10801138","URUGUAY 1310","CENTRO 6","4722941","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801365","V. SARFIELD 1135","CENTRO 6","4722947","Lectura Larga"],["ARCE JAIME JUAN CARLOS","10801550","JUNIN 1940","CENTRO 6","5003278","Lectura Larga"],["INSTITUTO CORRENTINO DEL AGUA Y AMBIENTE","10801372","PERU 1118","CENTRO 6","51568484","Lectura Larga Invertida"],["GANE YAMIL GABRIEL","60137910","PELLEGRINI 1888","CENTRO 6","251029515","Landys E330"],["BOERO ARIEL M Y LAMPERTTI CANDELA L ASOCIACION SIMPLE","60220933","PERU 895","CENTRO 6","251029543","Landys E330"],["M.C.C. TRIBUNAL DE FALTAS","10411550","BRASIL 1263","CENTRO 6","251046933","Landys E330"],["GAR S.A. (EL PARRILLON)","60181389","URUGUAY 500","CENTRO 6","601029935","Ampy/Landys"],["M.C.C. OFICINAS","60193368","BRASIL 1285","CENTRO 6","601029978","Ampy/Landys"],["M.C.C. EX MERCADO EL PISO","10095337","BRASIL 1201","CENTRO 6","601030011","Ampy/Landys"],["GRANDINE S.A.S.","60168345","IRIGOYEN 1902","CENTRO 6","611000018","Ampy/Landys"],["FUCOSA","60165307","ROCA 1084","CENTRO 6","611000044","Ampy/Landys"],["M.C.C. TRIBUNAL DE FALTAS","10801420","BRASIL 1255","CENTRO 6","611000047","Ampy/Landys"],["CENTRO DE EX SOLD.COMBATIENTES","60015285","ITUZAINGO 1238","CENTRO 6","611000155","Ampy/Landys"],["BRUNETTI ESQUIVEL DIEGO LUIS","60077226","BELGRANO 2410","CENTRO 6","611000166","Ampy/Landys"],["RIO URUGUAY COOPERATIVA DE SEGUROS LTDA","60105729","9 DE JULIO 1726","CENTRO 6","611000178","Ampy/Landys"],["FUNDACION HIMALAYA","10412979","BOLIVAR 1930","CENTRO 6","611000279","Ampy/Landys"],["M.C.C. PALACIO MUNICIPAL","60266787","IRIGOYEN/PERÚ Y ROCA- PZA LIBERTAD","CENTRO 6","612000094","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60110952","BOLIVAR 1948","CENTRO 6","612002021","Ampy/Landys"],["HABERKORN MARTIN SRL","60273142","JUNIN 2198","CENTRO 6","612002027","Ampy/Landys"],["SUPERMERCADOS PARADA CANGA S.A.","60214386","BELGRANO 2215","CENTRO 6","612002093","Ampy/Landys"],["ESMERALDA GROUP S.A","60131580","BELGRANO 2463","CENTRO 6","612002094","Ampy/Landys"],["BENITEZ GIL JORGE GUSTAVO","10433664","9 DE JULIO 2198","CENTRO 6","612005635","Ampy/Landys"],["M.PRODUCCION CTES.CAPITAL","60090922","PERU 982","CENTRO 6","612005657","Ampy/Landys"],["AMX ARGENTINA S.A.","10801338","PERU 1197","CENTRO 6","612005732","Ampy/Landys"],["M.EDUCACION CTES.C.G.E.(TOTALIZADOR)","60096858","BRASIL 658","CENTRO 6","612005734","Ampy/Landys"],["P.JUDICIAL CTES.(TOTALIZADOR)","60208874","JUJUY 848","CENTRO 7","515166","Lectura Larga"],["TELEFONICA MOVILES ARG. S.A.","10212925","SAN LORENZO 914","CENTRO 7","861653","T1"],["FARMACIA IDEAL SCS","10220535","AV. ESPANA 995","CENTRO 7","885768","Lectura Larga"],["LAS TORTAS DE MI TIA S.R.L.","10014222","SAN LORENZO 1071","CENTRO 7","885847","Lectura Larga"],["SINDICATO EMP. DE COMERCIO DE","10391356","SANTA FE 809","CENTRO 7","885852","Lectura Larga"],["PREVISORA DEL PARANA S.R.L.","10386171","H. YRIGOYEN 1772","CENTRO 7","906952","Lectura Larga"],["JULIA ISABEL FERNANDEZ","30293670","SAN LORENZO 1010","CENTRO 7","906970","Lectura Larga"],["INSTITUTO DE LOTERIA Y CASINOS CTES.","10800084","CORDOBA 915","CENTRO 7","2518721","Lectura Larga"],["INC S.A.","10801242","CORDOBA 917","CENTRO 7","2518723","Lectura Larga"],["INC S.A.","60099609","CORDOBA 927","CENTRO 7","2518741","Lectura Larga"],["HOTEL SAN MARTIN","60244014","SANTA FE 955","CENTRO 7","2543362","Lectura Larga"],["BBVA  BANCO  FRANCES  S.A.","10800784","CORDOBA 960","CENTRO 7","2709729","Lectura Larga"],["SUPERMAX  S.A.","10801498","JUNIN 1645","CENTRO 7","3288400","Lectura Larga"],["DACUNDA HNOS. S.A.","10800951","H. YRIGOYEN 1278","CENTRO 7","3288451","Lectura Larga"],["APODO S.A. .","60032507","HIPOLITO YRIGOYEN 1470","CENTRO 7","3288464","Lectura Larga"],["CITIBANK N. A.","10800051","H. YRIGOYEN 1602","CENTRO 7","3288476","Lectura Larga"],["ARZOBISPADO DE CORRIENTES","60200728","IRIGOYEN 1572","CENTRO 7","3603097","Lectura Larga"],["JOCKEY CLUB","10801043","MENDOZA 969","CENTRO 7","4003187","Lectura Larga"],["TATU S.A.","60189472","SAN LORENZO 1062","CENTRO 7","4410080","Lectura Larga"],["FACOR SOC. DE R. LTDA.","10801203","MENDOZA 922","CENTRO 7","4722943","Lectura Larga"],["BAZAR AVENIDA SA","60126566","CORDOBA 920","CENTRO 7","4722951","Lectura Larga"],["CAJA DE SEGUROS S.A.","10435902","AV. ESPANA 895","CENTRO 7","5003308","Lectura Larga"],["TELECOM ARGENTINA S.A.","10270499","MENDOZA 941","CENTRO 7","5083818","T1"],["PANATEL S.A.","30075552","MENDOZA 970","CENTRO 7","24237200","IT330"],["SOLE MIO S.R.L.","30341355","JUNIN 1787","CENTRO 7","24331661","IT410"],["PREVISORA DEL PARANA S.R.L.","10801650","HIPOLITO YRIGOYEN N¦ 1773","CENTRO 7","24332266","IT330"],["MAJUFAR S.R.L.","60167392","SANTA FE 905","CENTRO 7","251005617","Landys E330"],["ROCCA JUAN CARLOS ALEJANDRO","30284859","SAN MARTIN 1529","CENTRO 7","251020986","Landys E330"],["IVFE S.A.S.","60268296","MENDOZA 969","CENTRO 7","251025184","Landys E330"],["ALVAREZ DORIS VICENTA","10801315","MENDOZA 1001","CENTRO 7","251038329","Landys E330"],["PREVISORA DEL PARANA S.R.L.","60239148","HIPOLITO YRIGOYEN 1777","CENTRO 7","251038345","Landys E330"],["FILOMENA SRL","60243486","ESPAÑA 880","CENTRO 7","251046916","Landys E330"],["TOTAL PHARMA S.R.L.","60168708","JUNIN 1298","CENTRO 7","251046937","Landys E330"],["PREVISORA DEL PARANA  S.R.L.","60243168","JUNIN 1764","CENTRO 7","611000146","Ampy/Landys"],["DILCAR S.A.","60001521","SAN LORENZO 950","CENTRO 7","611000300","Ampy/Landys"],["REYERO RUBEN ALFREDO","60013878","JUNIN 1680/82","CENTRO 7","611000339","Ampy/Landys"],["LOCRED S.R.L.","60072839","H. IRIGOYEN (LOC. 3) 1108","CENTRO 7","612002085","Ampy/Landys"],["ENFRIAR S.R.L.","60070743","JUJUY 972","CENTRO 7","612002090","Ampy/Landys"],["SOLE MIO S.R.L.","60149249","JUNIN 1763","CENTRO 7","612002100","Ampy/Landys"],["FARMACIA NUEVA SAN JUAN SCS","10423764","SAN JUAN 999","CENTRO 7","612005616","Ampy/Landys"],["PREVISORA DEL PARANÁ S.R.L.","60245717","JUNIN 1766","CENTRO 7","612005719","Ampy/Landys"],["PREVISORA DEL PARANA S.R.L.","10801650","H. YRIGOYEN 1676","CENTRO 7","24331635","IT410"],["SHONKO S.A.","10445155","SANTA FE 1393","CENTRO 8","885711","Lectura Larga"],["INSTITUTO SEMPER S.R.L.","10413181","MARIANO MORENO 1754","CENTRO 8","885772","Lectura Larga"],["PREFECTURA CAPITAL-CIRCULO SUBOFICIALES","10015396","AV. ESPANA 1239","CENTRO 8","906951","Lectura Larga"],["TC 2000 DIAGNOSTICO POR IMAGENES S.R.L.","60137075","RIVADAVIA 1743","CENTRO 8","2764542","Elster A1052"],["I.N.S.S.J.P.-PAMI CAPITAL UGL2","10270698","JUJUY 1140","CENTRO 8","3247582","Lectura Larga"],["COLLANTES MIGUEL ANGEL","60115678","SAN MARTIN 1656","CENTRO 8","3288406","Lectura Larga"],["O.S.E.C.A.C.","10801121","JUJUY 1050","CENTRO 8","3288482","Lectura Larga"],["BANCO CREDICOOP COOP. LIMITADO","60112090","SANTA FE 1337","CENTRO 8","3603133","Lectura Larga"],["ANA VICTORIA S.A.","60169496","SANTA FE 1574","CENTRO 8","4003207","Lectura Larga"],["MARTINEZ BLANCA BEATRIZ","10800977","RIVADAVIA 1743","CENTRO 8","4722935","Lectura Larga"],["CLINICA DEL NIÑO","60216575","BELGRANO 1774","CENTRO 8","5003285","Lectura Larga"],["INSTITUTO DE LA 3 ra. EDAD S.H","10801290","BELGRANO 1663","CENTRO 8","5003300","Lectura Larga"],["MILANO RICARDO MAXIMO","60047302","ESPAÑA 1053","CENTRO 8","5003352","Lectura Larga"],["JUFEC S.A.","60047308","ESPAÑA 1595","CENTRO 8","5003361","Lectura Larga"],["SINDICATO DE EMPLEADOS DE COMERCIO","60127045","JUJUY 1072","CENTRO 8","5003379","Lectura Larga"],["SHONKO S.A.","30166810","SANTA FE 1377","CENTRO 8","24331876","SMART"],["MAJUFAR S.R.L.","60149112","BELGRANO 1768","CENTRO 8","601030061","Ampy/Landys"],["CLUB ATLETICO PINGÜINOS","60029976","SANTA FE 1365","CENTRO 8","612000102","Ampy/Landys"],["BELTRAN ITURRIAGA HECTOR RAFAE","60062251","SANTA FE 1505","CENTRO 8","612002031","Ampy/Landys"],["ULTRABRILLO S.A.S.","60194495","SANTA FE 1569","CENTRO 8","612005648","Ampy/Landys"],["DON ALFREDO S.A.","10801511","AV. ESPAÐA 1596","CENTRO 8","612005733","Ampy/Landys"],["TELECOM ARG. S.A.","10800053","JUNIN 1521","CENTRO JUNIN","149809","Lectura Larga"],["KADIMA S.A.","10801520","JUNIN 1401 LOCAL 1","CENTRO JUNIN","149828","Lectura Larga"],["HOTELOM  S.R.L.","10800844","JUNIN 1567","CENTRO JUNIN","272388","Lectura Larga"],["FRAVEGA S.A.C.I.E.I.","10801491","JUNIN 1178","CENTRO JUNIN","885628","Lectura Larga"],["DABRA S.A.","30145712","JUNIN 1385","CENTRO JUNIN","885730","Lectura Larga"],["CETROGAR S.A.","10270527","CORDOBA 873","CENTRO JUNIN","885739","Lectura Larga"],["CETROGAR S.A.","10801665","JUNIN 1326","CENTRO JUNIN","885843","Lectura Larga"],["VILLALBA CHRISTIAN FABIAN","30085490","JUNIN 1465","CENTRO JUNIN","885853","Lectura Larga"],["COMPAÑIA FINANCIERA ARGENTINA","10428227","JUNIN 1144","CENTRO JUNIN","885863","Lectura Larga"],["NORBERTO E. RUIZ E HIJOS","10069519","JUNIN 1233","CENTRO JUNIN","885864","Lectura Larga"],["LA LLAVE DEL CHACO - GILBARG M","10407621","JUNIN 1161","CENTRO JUNIN","885868","Lectura Larga"],["FINANPRO S.R.L.","30151370","CATAMARCA 801","CENTRO JUNIN","906956","Lectura Larga"],["SOLANAS S.A.","10800010","SAN JUAN 867","CENTRO JUNIN","2235486","Lectura Larga"],["CARSA S.A.","10800968","9 DE JULIO 1160","CENTRO JUNIN","2742944","Lectura Larga"],["FARMACIA CATEDRAL S.A.","10800562","SAN LORENZO 902","CENTRO JUNIN","3288389","Lectura Larga"],["M.JUSTICIA CTES.CAPITAL-REGISTRO CIVIL","30090107","SAN LORENZO 837","CENTRO JUNIN","3288390","Lectura Larga"],["LA ALEMANA S.R.L.","30215932","JUNIN 1247","CENTRO JUNIN","3288403","Lectura Larga"],["ANTUAN S.R.L.","10801314","JUNIN 1466","CENTRO JUNIN","4003158","Lectura Larga"],["B.D.P. DE GUILLERMO ALOE","10408126","JUNIN 1299","CENTRO JUNIN","4003176","Lectura Larga"],["KADIMA S.A.","30204041","JUNIN 1286","CENTRO JUNIN","4003196","Lectura Larga"],["RITORNO S.R.L.","30184669","JUNIN 1034","CENTRO JUNIN","4275605","Lectura Larga"],["CHANDAL S.R.L.","10801476","SAN LORENZO 886","CENTRO JUNIN","4637307","Lectura Larga"],["FRANK  JOSE HERNAN","10801003","JUNIN 1477","CENTRO JUNIN","5003243","Lectura Larga"],["KADIMA S.A.","10801039","JUNIN 1212","CENTRO JUNIN","5003255","Lectura Larga"],["S.A. CFN","30142367","CATAMARCA 855","CENTRO JUNIN","5003268","Lectura Larga"],["DPEC USO PROPIO","10446177","JUNIN 1240","CENTRO JUNIN","5003274","Lectura Larga"],["CARNICENTER S.R.L.","30195371","JUNIN 1026","CENTRO JUNIN","5003370","Lectura Larga"],["LORGUD S.R.L.","30201007","JUNIN 1002","CENTRO JUNIN","251005632","Landys E330"],["DILCAR S.A.","30205602","JUNIN 1289","CENTRO JUNIN","251005650","Landys E330"],["AMX ARGENTINA S.A.","10801418","JUNIN 1126","CENTRO JUNIN","251020982","Landys E330"],["LORGUD S.R.L.","30218802","JUNIN 1499 LOCAL 5","CENTRO JUNIN","251020994","Landys E330"],["AUREA CAPITAL","30333962","RIOJA 880","CENTRO JUNIN","251038306","Landys E330"],["FARMACIA DEL  SHOPPING SCS","30007428","JUNIN 999","CENTRO JUNIN","601029950","Ampy/Landys"],["IRENE TELAS S.R.L.","30224344","AGUSTIN GONZALEZ 1081","CENTRO JUNIN","601030017","Ampy/Landys"],["MAJUFAR S.R.L.","30229072","JUNIN 1084","CENTRO JUNIN","611000028","Ampy/Landys"],["VISION 101 S.A.","30073071","JUNIN 1426","CENTRO JUNIN","611000088","Ampy/Landys"],["GALARZA YGNACIO E ISABEL URBIE","10409418","JUNIN 1410","CENTRO JUNIN","611000176","Ampy/Landys"],["M.SALUD PUBLICA CTES.CAPITAL-HOS.GERIATR","30191506","SANTA FE 855","CENTRO JUNIN","611000282","Ampy/Landys"],["MACHE S.R.L.","30135287","JUNIN 1535","CENTRO JUNIN","611000321","Ampy/Landys"],["JUFEC S.A.","30195904","JUNIN 1102","CENTRO JUNIN","612002095","Ampy/Landys"],["MUEBLERIA\" EL OBRERO\"","10801316","MENDOZA 854","CENTRO JUNIN","612005619","Ampy/Landys"],["MAJUFAR S.R.L.","30155007","CATAMARCA 802","CENTRO JUNIN","612005630","Ampy/Landys"],["KING BAZAR S.R.L.","30205269","JUNIN 990","CENTRO JUNIN","612005634","Ampy/Landys"],["MTPD B° ARAZATY - SET N°185 –","30162548","SUIPACHA Y LAS HERAS","FERRE","149770","T1"],["TELECOM ARGENTINA S.A.","10270007","VELEZ SARSFIELD 1577","FERRE","885646","Lectura Larga"],["UNIMACO S.A.","60117454","AV. FERRE 2310","FERRE","885782","Lectura Larga"],["UNIMACO S.A.","60117458","MARIANO I LOZA 1615","FERRE","885783","Lectura Larga"],["PANEDILE ARGENTINA S.A.","30308317","CATAMARCA 1450","FERRE","997369","Prosumidor"],["CLUB ATLETICO BOCA UNIDOS","60007654","COSTANERA SUR - SET 821","FERRE","997375","Lectura Larga"],["TELEFONICA MOVILES ARG. S.A.","10212913","LAVALLE 462","FERRE","1802310","T1"],["M.EDUCACION CTES.C.G.E.ESC.402 B.ASTRADA","10270463","PIRAGINI NIVEYRO 2311","FERRE","1941730","T1"],["SHONKO S.A.","60045347","AV. 3 DE ABRIL 1355","FERRE","2235505","Lectura Larga"],["M.SALUD PUBLICA CTES.CAPITAL-HOS.CAMPAÑA","60191265","AV. FERRE 2700","FERRE","2235508","Lectura Larga"],["SHONKO S.A.","10801419","AVDA. 3 DE ABRIL 1375","FERRE","2235510","Lectura Larga"],["TORRE RIBERA FIDEICOMISO AL COSTO","60150404","NECOCHEA Y COSTANERA SUR","FERRE","2323766","Lectura Larga"],["M.SALUD PUBLICA CTES.CAPITAL-HOS.CAMPAÑA","60171224","AV. FERRE 2700","FERRE","2518697","Lectura Larga"],["HONFLEUR S.A. (CINES)","10801363","AV. FERRE Y CHACABUCO","FERRE","2527632","Lectura Larga"],["TELECOM ARGENTINA S.A.","30129108","PAGO LARGO 2050 BIS","FERRE","2742502","T1"],["ZENON GUSTAVO JAVIER","30247030","AV. CHACABUCO 1551","FERRE","3275950","T1"],["DIRECCION PROVINCIAL DE VIALIDAD","10800088","SAN LORENZO 1580","FERRE","3288391","Lectura Larga"],["M.C.C. DELEGACION SAN MARTIN","10800811","LAVALLE 1255","FERRE","3288395","Lectura Larga"],["LA ALEMANA S.R.L.","10801462","AV. FERRE N¦ 2002","FERRE","3288457","Lectura Larga"],["M.OBRAS CTES.DIR.PLANIFICACION Y OBRAS","10801263","AV. 3 DE ABRIL 1250","FERRE","3288473","Lectura Larga"],["FARMACIA 3 DE ABRIL","10801169","AV. 3 DE ABRIL 1199","FERRE","4003191","Lectura Larga"],["M.SALUD HOSPITAL ONCOLOGICO","60278197","AV CHACABUCO YSUIZA","FERRE","4323863","Lectura Larga"],["M.SALUD PUBLICA CTES.CAPITAL-HOS.CAMPAÑA","60177596","AV. FERRE 2700","FERRE","4632526","Lectura Larga"],["M.C.C. PALACIO MUNICIPAL","60266817","LAVALLE 50/51","FERRE","4637304","Lectura Larga"],["EMP. GASTRONOMICOS \"LOS CARDALES\"","60007124","COSTANERA Y LAS HERAS","FERRE","5003317","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10800767","AV. ARTIGAS 1435","FERRE","24332180","SMART"],["INC S.A.","10801253","AV. CHACABUCO Y AV. FERRE","FERRE","24332281","IT330"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10800089","AV. 3 DE ABRIL 1231","FERRE","24332308","IT330"],["MARUMA S.A.","60095763","LAMADRID 75","FERRE","51568487","Lectura Larga Invertida"],["FUNDACION  JEAN   PIAGET","10800657","LAVALLE 50","FERRE","51568493","Lectura Larga Invertida"],["QUELUC S.R.L.","10801405","LAVALLE 148","FERRE","83559580","Lectura Larga Invertida"],["GIGARED S.A.","60013076","AV. PEDRO FERRE 1750","FERRE","83559588","Lectura Larga Invertida"],["AMX ARGENTINA S.A.","60168294","PJE. MORGAN 1856","FERRE","601029966","Ampy/Landys"],["MAJUFAR S.R.L.","60149118","AV. 3 DE ABRIL 1301","FERRE","601030060","Ampy/Landys"],["GAR S.A","60053131","AV. ARTIGAS 1598","FERRE","612000112","Ampy/Landys"],["QUELUC S.R.L.","60064175","SUIPACHA 1749","FERRE","612005746","Ampy/Landys"],["LIN FEI","60148647","GRAL PAZ 550","FERRE","611000084","Ampy/Landys"],["JUFEC S.A.","60149300","NECOCHEA 70","FERRE","4156939","Lectura Larga"],["GOBERNADOR PEDRO FERRE S.A.","60150609","AV. PEDRO FERRE 2590","FERRE","4722964","Lectura Larga"],["CORREDORES VIALES S.A.","30198405","LAVALLE 47","FERRE","2001007","T1"],["BANCO DE CORRIENTES S.A.","30214868","LAVALLE 415","FERRE","24332287","IT410"],["BANCO DE CORRIENTES S.A.","30214874","LAVALLE 415","FERRE","24237193","IT330"],["INSTITUTO DE PREVISION SOCIAL CTES","30217516","LAVALLE 475","FERRE","24332310","IT330"],["IOSCOR CAPITAL","60187170","LAVALLE 465","FERRE","4410066","Lectura Larga"],["SERIAL AMILCAR NELSON","60189999","AV. 3 DE ABRIL 1358","FERRE","612000096","Ampy/Landys"],["CLUB ATLETICO BOCA UNIDOS","30235828","COSTANERA SUR Y LAMADRID","FERRE","251046929","Landys E330"],["DEPOT EXPRES SRL","60256248","ELIAS ABAD 1799","FERRE","251005615","Landys E330"],["DEPOT EXPRESS S.R.L.","30309447","SAN LORENZO 1643","FERRE","601029999","Ampy/Landys"],["GINSA S.A.","30320183","AV COSTANERA - JUAN PABLO II","FERRE","3603117","Alpha II"],["GINSA S.A.","60276773","AV JUAN PABLO II","FERRE","3247560","Prosumidor"],["S.A CISO","30329933","JUAN PABLO II - COMPLEJO BOULEVARD L 5","FERRE","4697916","Lectura Larga"],["MONTECARLO AUTOMOTORES S. A.","30330585","AV. COSTANERA L 4","FERRE","4323727","Lectura Larga"],["DEPOT EXPRESS S.R.L.","30332054","AV. COSTANERA J PABLO II","FERRE","24331662","SMART"],["COSTIERA CUCCINA L 3 y 4 GINSA S.A.","30336689","DISTRITO BOULEVARD 1782","FERRE","3603102","Lectura Larga"],["COSTIERA SUR L 6 GINSA S.A.","30336700","DISTRITO BOULVEARD 1782","FERRE","3226622","Lectura Larga"],["FIDEICOMISO AL COSTO TRAFO 1 TORRE RIBERA","30337890","NECOCHEA Y COSTANERA SUR","FERRE","24332110","IT330"],["FIDEICOMISO AL COSTO TRAFO 2 TORRE RIBERA","60293466","NECOCHEA Y COSTANERA SUR","FERRE","24332265","IT410"],["GINSA S.A.","30345102","PERPETUA LLANO DE RODRIGUEZ 1755","FERRE","24332236","IT330"],["SEBASTIANI S.A.","30054882","AV. INDEPENDENCIA 3995","INDEPENDENCIA","846867","Lectura Larga"],["CONO SUR LEVADURAS S.R.L.","10801674","AV. INDEPENDENCIA 4535","INDEPENDENCIA","846930","Lectura Larga"],["TELEFONICA MOVILES ARG. S.A.","10212914","PJE. BIRAN 1288","INDEPENDENCIA","885652","Lectura Larga"],["M.A.S.  AUTOMOTORES  S.A.","10220889","AV. INDEPENDENCIA 4060","INDEPENDENCIA","885799","Lectura Larga"],["PANIFICADOS MARTIN  S.R.L.","10801054","AV. INDEPENDENCIA 3210","INDEPENDENCIA","906958","Lectura Larga"],["R. P. B. S.A.","10212598","IGNACIO GORRITI 1631","INDEPENDENCIA","1567782","T1"],["TELECOM ARGENTINA S.A.","30023954","AV. INDEPENDENCIA 3609","INDEPENDENCIA","1609270","T1"],["M.EDUCACION CTES.D.G.E.SEC.C.O.P.Y C.O.","10143599","Av.INDEPENDENCIA Y RUTA 12","INDEPENDENCIA","1941705","T1"],["HELADOS EL POLO CTES S.R.L.","30003638","RECONQUISTA 1565","INDEPENDENCIA","3288413","Lectura Larga"],["AUDEC S.A.","30257052","AV. INDEPENDENCIA 4450","INDEPENDENCIA","3497202","Lectura Larga"],["SUPERMERCADOS PARADA CANGA S.A","10801007","AV. INDEPENDENCIA 5450","INDEPENDENCIA","4003209","Lectura Larga"],["SUC.  DE A. WILLINER","10801008","AV. INDEPENDENCIA 4935","INDEPENDENCIA","4275602","Lectura Larga"],["JUCRU INDEPENDENCIA S.A.","30185734","AV. INDEPENDENCIA Y RIO JURAMENTO","INDEPENDENCIA","4275604","Lectura Larga"],["DEPOT EXPRESS S.R.L.","30163992","AV. INDEPENDENCIA 4380","INDEPENDENCIA","4323879","Lectura Larga"],["AVICOLA SANTA ANA S.A.","10423270","AV. INDEPENDENCIA 4437","INDEPENDENCIA","4695858","Lectura Larga"],["EL GALPON MADERAS S.R.L.","30174744","AV. INDEPENDENCIA 4210","INDEPENDENCIA","4697961","Lectura Larga"],["SOLE MIO S.R.L.","30173421","AV. INDEPENDENCIA 5015","INDEPENDENCIA","5003222","Lectura Larga"],["ESMERALDA GROUP S.A","30153284","PJE. ESMERALDA 5340","INDEPENDENCIA","5003348","Lectura Larga"],["PRODUCTOS DANIEL S.A","10411509","MERCADO DE CONC G.5 P.10-12","INDEPENDENCIA","5172999","Elster A1052"],["DISTRIBUIDORA GANADERA DE CARNES SRL","30310522","AV. INDEPENDENCIA 5160","INDEPENDENCIA","24236862","IT410"],["SOLE MIO S.R.L.","30202288","AV. INDEPENDENCIA 3496","INDEPENDENCIA","24236907","IT410"],["AUDEC S.A.","10801362","AV. INDEPENDENCIA 4262","INDEPENDENCIA","24237210","IT330"],["TELECOM ARG. S.A.","10800989","LAVALLE 4547","INDEPENDENCIA","24332139","SMART"],["LA ALEMANA S.R.L.","10801479","ESMERALDA 4923","INDEPENDENCIA","24332257","IT410"],["TULIO RIERA e HIJOS","10801461","AV. INDEPENDENCIA 5390","INDEPENDENCIA","251005649","Landys E330"],["PABLO ELOY DONNET S.A.","30207708","AV. INDEPENDENCIA 5095","INDEPENDENCIA","251005662","Landys E330"],["HABERKORN MARTIN S.R.L.","30212300","AV. INDEPENDENCIA 5328","INDEPENDENCIA","251005663","Landys E330"],["ZENON NOGA YAZMIN","30173829","AV. INDEPENDENCIA 5103","INDEPENDENCIA","251038328","Landys E330"],["DE DIOS UNION DE LAS ASAMBLEAS","30267412","PJE. M. DEL CORRO 5254","INDEPENDENCIA","251038330","Landys E330"],["SILVESTRINI OSCAR EMILIO","30281278","TACUARI 1756","INDEPENDENCIA","251046914","Landys E330"],["HABERKORN MARTIN S.R.L.","30287793","AV INDEPENDENCIA 3540","INDEPENDENCIA","251046924","Landys E330"],["M.A.S.  AUTOMOTORES  S.A.","10801040","AV. INDEPENDENCIA 4098","INDEPENDENCIA","251046938","Landys E330"],["AUTO CENTER S.A.","30156533","AV. INDEPENDENCIA 4180","INDEPENDENCIA","601029986","Ampy/Landys"],["BOERO ARIEL M Y LAMPERTTI CANDELA L ASOCIACION SIMPLE","30224639","AV. INDEPENDENCIA 4984","INDEPENDENCIA","601030005","Ampy/Landys"],["SA ROUGE AUTOMOVILES","30202281","AV. INDEPENDENCIA 5402","INDEPENDENCIA","601030032","Ampy/Landys"],["DAUKSZEWICZ JUAN PABLO","10411819","MERCADO DE CONCENTRACION GAL. 8 PTO","INDEPENDENCIA","611000014","Ampy/Landys"],["LA ALEMANA S.R.L.","30242636","AV. INDEPENDENCIA 3609","INDEPENDENCIA","611000096","Ampy/Landys"],["TRANSPORTADORA CAUDALES VIGENCIA DUQUE SA","30235046","AV. INDEPENDENCIA 5205","INDEPENDENCIA","611000167","Ampy/Landys"],["G Y G S.A.","10801637","AV. INDEPENDENCIA 4311","INDEPENDENCIA","611000297","Ampy/Landys"],["METZ S.A.","30272283","AV. INDEPENDENCIA 4165","INDEPENDENCIA","611000335","Ampy/Landys"],["ARANDU PINTURAS S.R.L.","30119806","AV. INDEPENDENCIA 4402","INDEPENDENCIA","611000340","Ampy/Landys"],["GAO BIYUN","30030287","AVDA. INDEPENDENCIA 3640","INDEPENDENCIA","612000091","Ampy/Landys"],["AMX ARGENTINA S.A.","60296881","SUIZA 3602","INDEPENDENCIA","612000097","Ampy/Landys"],["HELADOS GARAVANO S.R.L.","10390449","AV. INDEPENDENCIA 4665","INDEPENDENCIA","612002089","Ampy/Landys"],["AMX ARGENTINA S.A.","10270058","DARRAGUEIRA 1487","INDEPENDENCIA","612005618","Ampy/Landys"],["SUPERMAX  S.A.","10800964","SAN JUAN 902","CENTRO JUNIN","24332221","IT330"],["MTPD Bº San Roque SET Nº 642","30041169","Tartagal e/Provincias Unidas y C lle Nº","MAIPU","82144","T1"],["MTPD Bº Esperanza SET Nº 500","30041125","Revidatti y B. Dalurzo","MAIPU","83841","T1"],["MTPD Bº Esperanza SET Nº 140","30041123","Matadero Municipal y Calle de Ac","MAIPU","83844","T1"],["MTPD Bº Esperanza SET Nº 528","30041127","Isaco Abitbol (Calle Nº 3) y  Re idatti","MAIPU","83846","T1"],["MTPD Bº San Roque SET Nº 191","30041161","Río Miriñay y Los Puelches","MAIPU","92205","T1"],["MTPD Bº Esperanza SET Nº 705","30041129","Calle Nº 8 y Calle Nº 1","MAIPU","92211","T1"],["MTPD Bº San Roque SET Nº 281","30041164","Tartagal y Cruz de los Milagros","MAIPU","149768","T1"],["MTPD Bº Dr. Montaña SET Nº 558","30041102","Moratín y Calle Nº 15","MAIPU","174967","T1"],["MTPD Bº Dr. Montaña SET Nº 614","30041110","Moratín y Calle Nº 19 25","MAIPU","174980","T1"],["MTPD B° COCAL  - SET N°527 –","30162534","ROLDAN ESQ. CALLE 482","MAIPU","175912","T1"],["MTPD Bº Esperanza SET Nº 677","30041128","Calle Nº 7 y Acceso Matadero Mun cipal","MAIPU","175917","T1"],["MTPD Bº SAN MARCOS SET N° 135","30020626","Bº SAN MARCOS - SET 135","MAIPU","578892","T1"],["MTPD Bº SAN ROQUE S.E.T. Nº 171","30021010","RIO MIRIÑAY Y STA. CATALINA","MAIPU","579019","T1"],["SUPERMAX  S.A.","10422149","GDOR. P. NUMA SOTO 1900","MAIPU","885619","Lectura Larga"],["CARSA S.A.","10801094","AV. MAIPU 25","MAIPU","885664","Lectura Larga"],["MTPD Bº Esperanza SET Nº 796","30041130","38 Viviendas EPAM","MAIPU","1324863","T1"],["FUNDACION SENDEROS","60048444","AV. LA PAZ 2375","MAIPU","1333548","Lectura Larga"],["TELEFONICA MOVILES S.A.","30007503","AV. MAIPU Y A.LARA","MAIPU","1515063","T1"],["MTPD Bº Esperanza SET Nº 501","30041126","Calle Nº 9 e/ Calle Nº 7 y Calle Nº 8","MAIPU","1515106","T1"],["TELECOM ARGENTINA S.A.","30025848","MAIPU 5050","MAIPU","1813230","T1"],["MTPD Bº SAN MARCOS SET Nº 467","10270581","BO. SAN MARCOS","MAIPU","1930639","T1"],["MTPD Bº COL. GRANADEROS SET Nº 438","10270553","BO. COL. GRANAD.","MAIPU","1930649","T1"],["MTPD Bº SAN MARCOS SET Nº 668","10270582","BO. SAN MARCOS","MAIPU","1941671","T1"],["MTPD Bº COL. GRANADEROS SET Nº 118","10270554","BO. COL. GRANAD.","MAIPU","1941679","T1"],["MTPD Bº SAN MARCOS SET Nº 135","10270583","BO. SAN MARCOS","MAIPU","1941713","T1"],["MTPD Bº COL. GRANADEROS SET Nº 338","10270612","BO. COL. GRANAD.","MAIPU","1941724","T1"],["TELEFONICA MOVILES ARGENTINA S.A.","30173363","ROLDAN 194","MAIPU","2764744","T1"],["AMX ARGENTINA S.A.","30075883","Calle 465 ( Bº San Antonio) 3402","MAIPU","2958977","T1"],["M.C.C. A.CO.R.","30103563","AV. LA PAZ 2546","MAIPU","3226613","Lectura Larga"],["SUPERMAX S.A.","30092254","AV. MAIPU 143","MAIPU","3226625","Lectura Larga"],["M.C.C. FRIGORIFICO MATADERO","10212871","AV.MAIPU S/N","MAIPU","3497223","Lectura Larga"],["SANCHEZ ALBERTO JOAQUIN","30151720","AV. MAIPU 3256","MAIPU","4003197","Lectura Larga"],["TELECOM ARGENTINA S.A.","30219440","AV MAIPU 2800 (CLUB TELEFONICOS)","MAIPU","4105785","T1"],["DIRECCION PROVINCIAL DE VIALIDAD","30192856","AV. MAIPU S/N","MAIPU","4149998","Lectura Larga"],["LORGUD S.R.L.","30195298","AV. MAIPU 3268","MAIPU","4323856","Lectura Larga"],["JEMAN S.R.L.","30213243","AV. MAIPU 4970","MAIPU","4323888","Lectura Larga"],["BRANDJALE S.A.","30141852","AV. MAIPU 3840","MAIPU","4323889","Lectura Larga"],["TELECOM ARGENTINA S.A.","30095710","LAVALLE 2110","MAIPU","4409625","T1"],["DPEC USO PROPIO","10445988","AV. MAIPU 2220","MAIPU","4410065","Lectura Larga"],["AR SAT S.A.","30143076","BARRIO SANTA CATALINA","MAIPU","4697948","Lectura Larga"],["MTPD Bº COL. GRANADERO  SET 663","10270555","BO. COL. GRANAD.","MAIPU","4712765","T1"],["AVICOLA SANTA ANA S.A.","30277785","AV. MAIPU 4901 ESQ PROYECTADA 26","MAIPU","4722962","Lectura Larga"],["TELECOM ARGENTINA S.A.","30040587","AV.  MAIPU 383","MAIPU","4745077","T1"],["ALOE K COMPANY S.R.L.","30095568","AV. MAIPU 3508","MAIPU","5003245","Lectura Larga"],["FORMOSO JOSE ANTONIO","10801541","AV. MAIPU 2596","MAIPU","5003247","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801246","AV. TTE. IBAÑEZ 1951","MAIPU","5003284","Lectura Larga"],["SUPERMAX  S.A.","10801301","AV. MAIPU 359","MAIPU","5003329","Lectura Larga"],["DPEC USO PROPIO","10445987","AV. MAIPU 2220","MAIPU","5003366","Lectura Larga"],["LOS 3 HERMANOS S.A.S.","30179898","B* DR. MONTAÑA CALLE 2 Y 19","MAIPU","5003377","Lectura Larga"],["ALARCON  HUGO  ARNALDO","10800673","MOCORETA   S/N¦","MAIPU","5003389","Lectura Larga"],["SERVIMETAL  S.A.","10801055","AV. MAIPU 2180","MAIPU","24236828","IT410"],["WAL MART ARGENTINA S R L","30032632","AV. MAIPU 2800","MAIPU","24237195","IT330"],["TAFIRA S.A.","30201299","ACONQUIJA 2511","MAIPU","24331628","IT410"],["EDUCANDO S.A.","30014169","AV. MAIPU 3187","MAIPU","24332141","SMART"],["DACUNDA HNOS. S.A.","10800027","ADA: MAIPU Y TTE: IBAÐEZ","MAIPU","24332194","IT410"],["MARTIN JUAN JORGE","10800036","MATACOS Y ACONQUIJA","MAIPU","24332195","IT330"],["M.C.C. PARQUE INDUSTRIAL CORRIENTES","30336764","PREDIO STA. CATALINA PAR.INDUSTRIAL","MAIPU","24332238","SMART"],["M.C.C. PARQUE INDUSTRIAL CORRIENTES","30271621","PREDIO STA. CATALINA PAR.INDUSTRIAL","MAIPU","24332258","SMART"],["M.C.C. PARQUE INDUSTRIAL CORRIENTES","30261894","PREDIO STA. CATALINA PAR.INDUSTRIAL","MAIPU","24332259","SMART"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","11801344","AV. TTE. IBAÑEZ 1897","MAIPU","37226997","Lectura Larga Invertida"],["BANCO DE CTES. S.A.","30081830","AV. TTE. IBAÑEZ 1826","MAIPU","51568513","Lectura Larga Invertida"],["M.SEGURIDAD CTES. POLICIA CJO. FORMATIVO","30280638","B* SANTA CATALINA","MAIPU","83559620","Lectura Larga Invertida"],["MEDINA MARCELO JAVIER","30247286","AV. MAIPU 2570","MAIPU","251005672","Landys E330"],["NORFAR S.R.L.","30214152","AV. MAIPU 4970 LOC 1","MAIPU","251020988","Landys E330"],["M.EDUCACION CTES.MINISTERIO(TOTALIZADOR)","11801568","NINI FLORES Y C.MEZA","MAIPU","251029537","Landys E330"],["S.R.L. EL FLAUTIN","60279454","AV. ALTA GRACIA 2810","MAIPU","251038333","Landys E330"],["FIGUEROA RAMIRO ALEJANDRO","30118147","AV. MAIPU 7830","MAIPU","251046947","Landys E330"],["AZIFE ALUMINIOS S.A.","30145889","AV. MAIPU 6705","MAIPU","601029964","Ampy/Landys"],["FARFAN ANDRES MARCELO","30150884","ACONCAGUA 3051","MAIPU","601029972","Ampy/Landys"],["AQUINO CRISTIAN VICTORINO","30107583","AV. MAIPU 1687","MAIPU","601029975","Ampy/Landys"],["TANG CONG BING","30152368","LARRATEA 5616","MAIPU","601029976","Ampy/Landys"],["GOMEZ CESAR ADOLFO","30159737","ITA IBATE 3402","MAIPU","601030003","Ampy/Landys"],["AMX ARGENTINA S.A.","60170163","ARISTOBULO DEL VALLE 5400","MAIPU","601030038","Ampy/Landys"],["FELIPITO S.R.L.","60010972","FUTALEUFU ESQUINA ATACAMA","MAIPU","601030042","Ampy/Landys"],["BUCOR S.A.","30171733","AV. MAIPU 2305","MAIPU","601030054","Ampy/Landys"],["TELECOM ARGENTINA S.A.","30126645","SUECIA Y VICE GDOR BORGES","MAIPU","606104328","T1"],["FELIPITO S.R.L.","60031312","RECONQUISTA 3098","MAIPU","611000086","Ampy/Landys"],["TELEFONICA MOVILES ARG. S.A.","10212917","FRAGATA ARGENTINA 2950","MAIPU","611000125","Ampy/Landys"],["NITSCHE MARIA ELAINE","30046896","AV. MAIPU 6500","MAIPU","611000132","Ampy/Landys"],["JINETES SRL","30014129","MAIPU 363","MAIPU","611000289","Ampy/Landys"],["INGECO S.A.CASELLA S.A UNION TRANSITORIA","30218257","SANTA CATALINA S/ N","MAIPU","611000324","Ampy/Landys"],["DROSE PABLO CESAR","30029101","AV. MAIPU 2400","MAIPU","612000089","Ampy/Landys"],["HABERKORN MARTIN S.R.L.","30188602","AV. MAIPU 7185","MAIPU","612005679","Ampy/Landys"],["FABELO S.A.S.","30230855","AV. MAIPU 105","MAIPU","612002007","Ampy/Landys"],["LA ALEMANA S.R.L.","30258153","AV. MAIPU 1543","MAIPU","83559666","Lectura Larga Invertida"],["MERCOVE S.R.L.","30274216","AV MAIPU 2160","MAIPU","251038343","Landys E330"],["PASTAS ALE S.R.L.","30299510","NTRA. SRA. DE ASUNCION 2792","MAIPU","51568497","Lectura Larga Invertida"],["EQUIPO MEDICO DE EMERGENCIAS CORRIENTES S.A.","30340333","AV. MAIPÚ 675","MAIPU","24236927","IT410"],["VERDUN ZALAZAR ROSA ELIZABETH","60018234","VELEZ SARSFIELD 205","P. MITRE","846876","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","60268538","VELEZ SARFIELD 38","P. MITRE","846878","Lectura Larga"],["TELECOM ARGENTINA S.A.","10212935","GDOR. GELABERT 534","P. MITRE","885637","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.ESC.REGIONAL","10049065","SGTO. CABRAL 2150","P. MITRE","885674","Lectura Larga"],["M.HACIENDA CTES.(TOTALIZADOR)","10801430","AV. JUAN PUJOL 2330","P. MITRE","885728","Lectura Larga"],["9 TREBOL S.A.","60011983","AV. PUJOL 1979","P. MITRE","906957","Lectura Larga"],["MTPD Bº BAÑADO NORTE SET Nº22","10270652","VELEZ SARSFIELD","P. MITRE","1941700","T1"],["U.N.NE. FAC. CIENCIAS VETERINARIAS","60050452","SARGENTO CABRAL 2139","P. MITRE","2235519","Lectura Larga"],["U.N.NE. CAMPUS SGTO CABRAL MORGUE","60025567","SGTO. CABRAL 2100","P. MITRE","3247592","Lectura Larga"],["CLUB DE REGATAS CORRIENTES","10800613","AV. TORRES DE VERA 1599","P. MITRE","3288456","Lectura Larga"],["LIMPIOLUX NORTE S.A.","10801157","AGUSTIN P. JUSTO 2345","P. MITRE","4003175","Lectura Larga"],["LA ALEMANA S.R.L.","60170460","AV. JUAN PUJOL 2189","P. MITRE","4275597","Lectura Larga"],["SUPERMAX  S.A.","10800851","QUINTANA 1920","P. MITRE","4697949","Lectura Larga"],["TELEFONICA MOVILES ARGENTINA S.A","30153378","LOPEZ Y PLANES 2366","P. MITRE","4926177","T1"],["DEPOT EXPRESS S.R.L.","30309961","GOBERNADOR LOPEZ 240","P. MITRE","24236830","IT410"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10801204","VELES SARFIELD Y SARGENTO CABRAL","P. MITRE","24332171","SMART"],["U.N.NE. FACULTAD DE CIENCIAS AGRARIAS","30058003","SARGENTO CABRAL 2131","P. MITRE","24332348","IT330"],["AYALA AUTOMOTORES S.A.","60111293","JUJUY 535","P. MITRE","51568515","Lectura Larga Invertida"],["U.N.NE. RELAC.LABO.CARRERAS DEP.","60155035","GDOR. GELABERT 50","P. MITRE","51609713","Lectura Larga Invertida"],["U.N.NE. S.U.M.FACULTAD CIENCIAS AGRARIAS","60155313","GDOR GELABERT 50","P. MITRE","51609716","Lectura Larga Invertida"],["AMX ARGENTINA S.A.","60162428","JOSE M. ROLON 2168","P. MITRE","251005609","Landys E330"],["JEMAN S.R.L.","60221424","PARAGUAY 526","P. MITRE","251029547","Landys E330"],["AYALA AUTOMOTORES S.A.","60055592","AV. J. PUJOL 1810","P. MITRE","251046927","Landys E330"],["MUTUAL PERS. DE LA SALUD CORRIENTES","60083366","AV. J. PUJOL 1998","P. MITRE","251046930","Landys E330"],["SCHAHOVSKOY JUAN ANGEL","60207496","AV. PUJOL 2083","P. MITRE","601030055","Ampy/Landys"],["M.EDUCACION CTES.D.G.E.SEC.CEN.EDUC.FIS.","10801564","GDOR. J.M. ROLON 2145","P. MITRE","612002066","Ampy/Landys"],["SERVICIOS GASTRONOMICOS S.R.L.","10801302","AV. TORRES DE VERA 1599","P. MITRE","612005678","Ampy/Landys"],["PITANA DE INTRA ESTELA E.","10801558","JUJUY 530","P. MITRE","612005701","Ampy/Landys"],["DEPOT EXPRESS S.R.L.","60236538","25 DE MAYO 1885","P. MITRE","612005748","Ampy/Landys"],["S.R.L. FACOR","60150649","AGUSTIN P. JUSTO 1991","P. MITRE","612005750","Ampy/Landys"],["MUNICIPIO RIACHUELO FRIGORIFICO","30074285","RUTA NACIONAL 12 KM. 1023","RIACHUELO - MATADERO","83559592","ISKRA MT880"],["MTPD B° SANTA RITA SET N° 1126","30151134","CALLE 111 Y CALLE 138","RUTA NORTE","149760","T1"],["MTPD - B° SANTA RITA - SET 1125","30151125","ROBERTO YEDRO 2070 CASI CALLE 182","RUTA NORTE","174971","T1"],["MTPD Bº Ponce SET Nº 561","30040173","Acceso Principal Barrio Ponce","RUTA NORTE","174973","T1"],["MTPD Bº Sapucay SET Nº 536","30040226","Ayacucho al Este dentro Bº SAPUC Y NORTE","RUTA NORTE","175911","T1"],["MTPD Bº Cremonte SET Nº 244","30040133","Ayacucho al Este y Juan Romero","RUTA NORTE","175949","T1"],["AMX ARGENTINA S.A.","10270599","CESAR ALVAREZ FRENTE A YPF #N/A","RUTA NORTE","1178589","T1"],["U.N.NE. CAMPUS (ALBERGUE EST.)","10800637","RUTA NAC.12 - SECTOR OESTE","RUTA NORTE","885639","Lectura Larga"],["GONZALEZ JOSE ANTONIO","30224768","B° M. COLLANTES MZ 1 LOC 8","RUTA NORTE","885742","Lectura Larga"],["SCUDERIA S. A.","60177745","RUTA PROV. N5 KM 5741","RUTA NORTE","1266129","Lectura Larga"],["TARAGUY RUGBY CLUB","60246961","ACCESO AL LAZARETO","RUTA NORTE","1333530","Prosumidor"],["CORREDORES VIALES S.A.","30198402","RUTA NAC. 12 KM 1040 B° YECOHA","RUTA NORTE","1600532","T1"],["TELEFONICA MOVIL ARG. S.A.","30102972","JOAQUIN ARQUERO 2145","RUTA NORTE","1813349","T1"],["AMX ARGENTINA S.A.","10270530","ENTRADA CAMINO A SANTA ANA","RUTA NORTE","1822534","T1"],["MTPD Bº CREMONTE SET Nº 720","10270560","AV. AYACUCHO","RUTA NORTE","1941674","T1"],["M.PRODUCCION CTES.SE.PRO.FI","30293673","RUTA NAC 12 KM 1031","RUTA NORTE","1941684","T1"],["TELECOM ARG. S.A.","10212747","LAS LOMAS 11580","RUTA NORTE","2159141","T1"],["U.N.NE. E.R.A.G.I.A.","10801493","RUTA N¦ 12 Y KM 1031","RUTA NORTE","2773301","Lectura Larga"],["SINDICATO EMP. DE COMERCIO DE","10801168","RUTA 12 Y AVDA. LIBERTAD","RUTA NORTE","2773325","Lectura Larga"],["TELECOM ARGENTINA S.A.","30104241","RUTA NAC N° 12- KM. 1040","RUTA NORTE","2960251","T1"],["DISTRIBUIDORA JOTA BE S.A.","60052497","RUTA 5 KM 3,48 LOMA ALTA","RUTA NORTE","3226627","Prosumidor"],["DEPOT EXPRESS S.R.L.","60163497","RUTA 12 Y RUTA 43 LOC  7","RUTA NORTE","4003194","Lectura Larga"],["CANGA PANIFICADOS S.A.","30307920","RUTA PROVINCIAL N° 5 KM 1,23","RUTA NORTE","4390865","Lectura Larga"],["TELECOM ARGENTINA S.A.","30042336","RUTA Nº5 - KM. 2.5","RUTA NORTE","4409751","T1"],["CORREDORES VIALES S.A.","30198403","RUTA NAC. 12 KM 1040 B° YECOHA","RUTA NORTE","4985444","T1"],["S.R.L FROZEN","30161413","B° PONCE MZ C LOTE 10","RUTA NORTE","24236952","IT410"],["TEXTIL IBERA S.A.","10212693","LAS LOMAS 11352","RUTA NORTE","24237199","IT330"],["UNIMACO S.A.","30136280","RUTA NAC. 12 KM 1033","RUTA NORTE","24237202","IT330"],["EL VIRACHO S.A.","30155575","RUTA NAC. 12 KM 1040","RUTA NORTE","24237206","IT330"],["SUPERMAX  S.A. (Cam.STA. ANA)","30082836","CAM SANTA ANA Y PJE LAGUNA SOTO","RUTA NORTE","24237208","IT330"],["M.OBRAS CTES. AEROP.PIRAGINI NIVEYRO","30297493","RUTA NACIONAL 12 KM.6","RUTA NORTE","24237214","IT330"],["EE SS VIRGEN DE ITATI C.F. GOL","10409093","RUTA 12 E INDEPENDENCIA","RUTA NORTE","24331564","SMART"],["LAS CAMELIAS S.A.","10420712","AV. CENTENARIO 5896","RUTA NORTE","24331660","SMART"],["LA ALEMANA S.R.L.","30286242","RUTA 43 KM 0,4","RUTA NORTE","24332120","IT330"],["ITALGAS S.A.","10800760","RUTA  N¦ 12  Km  7","RUTA NORTE","24332121","IT330"],["F.A.T.A.G.A","30306061","PARAJE EL PERICHON 1° SECCION RURAL LOTE 54","RUTA NORTE","24332132","SMART"],["OSCAR LEANDRO S.R.L.","30129096","RUTA 12 - Bº LOMAS (YECOHA)","RUTA NORTE","24332134","IT330"],["PREVISORA DEL PARANA S.R.L.","30029835","RUTA NAC. 12 - KM 1042","RUTA NORTE","24332135","IT330"],["JUFEC S.A.","10801195","RUTA NAC. N¦ 12 y RUTA PROV. N¦ 5","RUTA NORTE","24332157","SMART"],["ESEICA NEA SRL","30102889","RUTA 5 KM-5","RUTA NORTE","24332220","IT330"],["SUPERMERCADO MAYORISTA MAKRO S","10801575","RUTA PROVINCIAL NRO 5 - KM 0,5","RUTA NORTE","24332250","IT330"],["CANGA PANIFICADOS S.A.","30232938","RUTA PROV. N° 5 S/N","RUTA NORTE","29783417","SMART"],["IMPRECOR S.A.","10800975","RUTA N¦ 12  KM 1034.5","RUTA NORTE","83559604","Lectura Larga Invertida"],["CORREDORES VIALES S.A.","60170730","RUTA NAC 12 KM 1030","RUTA NORTE","251005644","Landys E330"],["HITO S.A.","60177128","RUTA N° 5 E/ DR. MEABE Y CALLE 113","RUTA NORTE","251005652","Landys E330"],["J&C DISTRIBUCIONES S.R.L.","60230595","RUTA 43 KM 1","RUTA NORTE","251038318","Landys E330"],["OSCAR LEANDRO S.R.L.","60234586","RUTA PROV 5 KM 6,5","RUTA NORTE","251038337","Landys E330"],["ZENON NOGA YAZMIN","60143714","RUTA 5 KM 0,400 BO. CREMONTE","RUTA NORTE","251046901","Landys E330"],["CONS.PROF.ING.ARQ Y AGR.","60134815","EL PERICHON","RUTA NORTE","601029977","Ampy/Landys"],["TOTAL PHARMA S.R.L.","60167729","RUTA N°12 RUTA N°43 ACC STA ANA","RUTA NORTE","601030009","Ampy/Landys"],["S. A. ADA","60172945","RUTA NAC. N12 KM 1036","RUTA NORTE","601030046","Ampy/Landys"],["AMX ARGENTINA S.A.","10270313","M. ACU#A 2621","RUTA NORTE","601030058","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60117459","RUTA PROV. N° 5 ESQ CESAR ALVAREZ","RUTA NORTE","611000206","Ampy/Landys"],["DEPOT EXPRESS S.R.L.","60255328","RP 43 KM 2 - ACCESO STA ANA","RUTA NORTE","612000077","Ampy/Landys"],["HOSPEDAJES KILLARI S.R.L.","60175218","RUTA 12 KM 1035","RUTA NORTE","612002022","Ampy/Landys"],["PETROCOR F.C.S.A.","10801495","AV. LIBERTAD Y RUTA 12","RUTA NORTE","612002037","Ampy/Landys"],["NEXO OBRAS Y SERVICIOS S.A.","60092440","PEDRO E. MORESI  Nº6465","RUTA NORTE","612002078","Ampy/Landys"],["FIDANI ALEJANDRO GASTON","60233819","RUTA 5 KM 7","RUTA NORTE","612005604","Ampy/Landys"],["PILARES S.R.L.","60164854","RUTA NAC 12 Y RUTA 43 LOC 2","RUTA NORTE","612005703","Ampy/Landys"],["BRUIC YANINA KARIN","60102591","RUTA PROV. N° 5 KM 1,5","RUTA NORTE","612005709","Ampy/Landys"],["MTPD Bº Pirayui SET Nº 849","30041149","Bº Pirayui 50 Viv.","RUTA SUR","63378","T1"],["MTPD Bº Pirayui SET Nº 847","30041147","Bº Pirayui 500 Viv. Mz.\"H\"","RUTA SUR","82145","T1"],["MTPD B° COSTA ESPERANZA  SET N°875","30162077","S. DE BUSTAMANTE Y VESPUCIO","RUTA SUR","82151","T1"],["MTPD - B° SANTA MARGARITA - SET Nº 908","30162592","EL TACUARAL ESQ. MBOCAYA","RUTA SUR","82152","T1"],["MTPD Bº Pirayui SET Nº 845","30041144","Bº Pirayui 500 Viv. Mz.\"T\"","RUTA SUR","83853","T1"],["MTPD B° F JOSE DE LA QUINTANA SET N°461","30155191","CALLE N°506 Y CALLE 535","RUTA SUR","92201","T1"],["MTPD B° F JOSE DE LA QUINTANA SET N° 460","30155151","CALLE 506 CASI YUGOSLAVIA-PAIUBRE","RUTA SUR","174989","T1"],["MTPD B°CIUDADES CORRENTINAS - SET N°1159","30162560","MENDEZ Y SUECIA","RUTA SUR","175942","T1"],["MTPD Bº CAÑADA QUIROZ SET. N° 597","30041106","Calle Rueda al 1000","RUTA SUR","175981","T1"],["OSCAR LEANDRO S.R.L.","30138368","RUTA NAC 12 Y AV. MAIPU","RUTA SUR","885625","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801243","B¦ PIRAYUI","RUTA SUR","885708","Lectura Larga"],["MTPD B° BARRIO PIRAYUI - SET N°1302–","30276392","MTPD B° BARRIO PIRAYUI SET N°1302","RUTA SUR","1373368","T1"],["CORREDORES VIALES S.A.","30198404","RUTA 12 KM 1024 -10255 y AV MAIPU","RUTA SUR","1575175","T1"],["MTPD Bº LA OLLA SET Nº 723","10270616","VILLA LA OLLA","RUTA SUR","1941738","T1"],["LA ALEMANA S.R.L.","30115927","RUTA NAC N° 12 KM 1028","RUTA SUR","3226660","Lectura Larga"],["TRANSMICOR S.A.","30021272","RUTA NAC. 12 KM 1025","RUTA SUR","3288430","Lectura Larga"],["HIJOS DE ROBERTO C. DEMONTE S.","10801375","RUTA NACINAL 12  KM 1026","RUTA SUR","3288440","Lectura Larga"],["M.SEGURIDAD CTES.SERVICIO PENIT.ALC.GJA.","30107143","PARAJE RUEDA","RUTA SUR","3396066","Lectura Larga"],["FUNDACION SAN PIO DE PIETRELCINA CTES.","30139029","ALEJO RUEDA 247","RUTA SUR","4233013","Elster A1052"],["AMX ARGENTINA S.A.","30275515","RAMOS MEJIA ESQ. CUBA 3910","RUTA SUR","4233588","T1"],["REDCOM S.A.","10801281","RUTA NACIONAL N¦ 12 KM 1028","RUTA SUR","4323868","Lectura Larga"],["DROGUERIA AVENIDA S.A.","30063359","AV. MAIPU INTERSECCION RN Nº 12","RUTA SUR","4379158","Lectura Larga"],["M.SEGURIDAD CTES.PENAL SAN CAYETANO","30223771","PARAJE RUEDA","RUTA SUR","4519802","Lectura Larga"],["JCR S.A.","30156138","RUTA NAC 12 KM 1026,3","RUTA SUR","4632534","Lectura Larga"],["DANUBIO S.A.","10801307","RUTA NAC. 12 - KM 886","RUTA SUR","4695852","Lectura Larga"],["LUGO JUAN ALBERTO","60022829","RUTA NAC. Nro 12 KM","RUTA SUR","4722944","Lectura Larga"],["VASIL S.R.L.","30118429","RUTA NAC. 12 KM 1023","RUTA SUR","5003367","Lectura Larga"],["TELECOM ARGENTINA S.A.","30259111","Entre Suecia( esq. calle s/n)y Cuba","RUTA SUR","5173009","T1"],["FERNANDEZ LIBORIA","30009722","AV. MAIPU KM:8 8020","RUTA SUR","24331659","SMART"],["ALMARO S.A.","30145702","RUTA 12 E/ SUECIA Y A. PIRAYUI","RUTA SUR","24331878","SMART"],["DOS SANTOS ERIKA SOLEDAD","30230995","RUTA NAC 12 KM 1022","RUTA SUR","24332176","SMART"],["MNS SOCIEDAD ANONIMA","10801386","RUTA NAC. N¦ 12 y AV. MAIPU","RUTA SUR","24332256","SMART"],["DACUNDA HNOS. S.A.","30046005","RUTA Nº 12 - KM 1049","RUTA SUR","51568494","Lectura Larga Invertida"],["DON GASTON S.A.","30257872","RUTA NAC. N12 KM 1023","RUTA SUR","83559576","Lectura Larga Invertida"],["LOGISTICA  LA  SERENISIMA  S.A","10801466","RUTA N¦ 12 - ENTRE KM 1024 Y 1025","RUTA SUR","83559603","Lectura Larga Invertida"],["CLUB ATLETICO BOCA UNIDOS","30118063","TRENTO Y SIRACUSA SET 1013","RUTA SUR","83559631","Lectura Larga Invertida"],["DROGUERIA DEL SUD  S.A.","10800902","RUTA NACIONAL N¦ 12","RUTA SUR","83559648","Lectura Larga Invertida"],["O.C.A. S.R.L..","30079868","RUTA NAC Nº 12 KM 1028","RUTA SUR","89857954","MT174"],["VICTOR NADIA ANTONELA","30206674","RUTA 12 KM 1028","RUTA SUR","251005657","Landys E330"],["TELECOM ARGENTINA S.A.","30109659","RUTA N° 12 KM 1026","RUTA SUR","251029520","Landys E330"],["SUPERMAX S.A.","30253847","AV. CUBA 5230","RUTA SUR","251029523","Landys E330"],["LA RUTA S.A.","30133279","JOSE A MENDEZ 3621","RUTA SUR","251038310","Landys E330"],["M.SEGURIDAD CTES.SERVICIO PENITEN.UNID.6","30107152","COMPLEJO SAN CAYETANO","RUTA SUR","251038316","Landys E330"],["ALARCON FIDELINO","10801014","RUTA NACIONAL N¦ 12 KM 1030","RUTA SUR","251046946","Landys E330"],["TRANSPORTE RAOSA S.R.L.","10398643","RUTA NAC. N12 KM 1027","RUTA SUR","601029998","Ampy/Landys"],["JCR S.A.","10801291","RUTA N¦ 12  KM 1024","RUTA SUR","611000165","Ampy/Landys"],["RESIDENCIA DEL LITORAL S.A.","30109369","RUTA 12 KM 1027,5","RUTA SUR","611000220","Ampy/Landys"],["VERELLEN EDGAR - HOTEL C. DE O","10801701","RUTA NAC. 12 KM 949","RUTA SUR","612005627","Ampy/Landys"],["MERCOVE S.R.L.","30197385","RUTA 12 KM 1023","RUTA SUR","612005636","Ampy/Landys"],["CLUB ATLETICO BOCA UNIDOS","60100261","TRENTON S/N","RUTA SUR","612005692","Ampy/Landys"],["OSCAR LEANDRO S.R.L.","30138732","RUTA NAC N° 12 KM Y LOS FICUS 82","RUTA SUR","612005729","Ampy/Landys"],["TELECOM ARGENTINA S.A.","30302493","RUTA 12 KM 1028","RUTA SUR","251005573","Landys E330"],["DE LA COSTA S.A.","10801640","CENT. SHOP. MALL (REC) L78, 79, 80","SHOP.Z1-2-6","515198","Lectura Larga"],["CETROGAR S.A.","30152693","SHOPPING MALL LOCAL 101","SHOP.Z1-2-6","846905","Lectura Larga"],["KADIMA S.A.","30159491","SHOPPING MALL LOC PB 104 - PB 105","SHOP.Z1-2-6","885877","Lectura Larga"],["GIRE S.A.","30063490","CENTENARIO SHOPPING MALL L: 47","SHOP.Z1-2-6","2290418","T1"],["REICHEL LILIANA BEATRIZ","30065279","AV. CENTENARIO  LOC 70 3525","SHOP.Z1-2-6","2321067","Elster A1052"],["JAF S.R.L.","30059390","CENTENARIO SHOPPING MALL LOCAL 52","SHOP.Z1-2-6","2321069","Elster A1052"],["FYG S.R.L.","10270640","AV. CENTENARIO 3500","SHOP.Z1-2-6","2321070","Elster A1052"],["VISION 101 S.A.","30145586","SHOPPING MALL LOCAL 36","SHOP.Z1-2-6","2321086","Elster A1052"],["BERTONI  JUAN IGNACIO","30031339","CENTENARIO SHOPPIG MALL - L: 39","SHOP.Z1-2-6","2321088","Elster A1052"],["IVFE S.A.S.","30313205","AV. CENTENARIO LOCAL 76 3525","SHOP.Z1-2-6","2321089","Elster A1052"],["EVANA GARAVANO Y CONSTANZA FARIZANO SH","30165458","SHOPPING MALL LOC 38","SHOP.Z1-2-6","2321093","Elster A1052"],["HOME STYLE S.A.","30203998","SHOPPING MALL LOC 37","SHOP.Z1-2-6","2959684","T1"],["IVFE SAS","60270566","SHOPPING MALL LOC B-84","SHOP.Z1-2-6","3764082","T1"],["DINNER ARGENTINA S.A.","30151344","SHOPPING MALL LOC 74","SHOP.Z1-2-6","3764542","T1"],["NTB  S.R.L.","30303693","AV RAUL ALFONSÍN 3525","SHOP.Z1-2-6","3952348","T1"],["JANA TENDENCIAS S.R.L.","30291748","AV. PTE. RAUL ALFONSIN 3525","SHOP.Z1-2-6","4105800","T1"],["FRANCO NORMA BEATRIZ","10445529","AV. GREGORIO POMAR 840","SHOP.Z1-2-6","4233409","T1"],["PLAYGROUND S.R.L.","30211918","SHOPPING LOC 117 P.ALTA","SHOP.Z1-2-6","4379152","Lectura Larga"],["BARROS FRANCO RAUL","30203992","SHOPPING MALL LOC 40","SHOP.Z1-2-6","4409623","T1"],["CALABRIA S.A.","30193989","SHOPPING MALL LOC 113","SHOP.Z1-2-6","4712353","T1"],["GRIGOLATTO VALERIA LUCIANA","30225115","SHOPPING MALL LOC 112","SHOP.Z1-2-6","4920822","T1"],["HECNIA SAS","30242385","SHOPPING MALL LOC 48 B","SHOP.Z1-2-6","4926477","T1"],["VINOKUROV RAUL MAURICIO","30231405","SHOPPING MALL LOC 51","SHOP.Z1-2-6","4931917","T1"],["BERTE SAS","30230395","SHOPPING MALL LOC B 71","SHOP.Z1-2-6","4931962","T1"],["STATION S.A.","10801526","CENTENARIO SHOPPING MALL - L 33 -34","SHOP.Z1-2-6","5003340","Lectura Larga"],["DE LA COSTA S.A.","60030951","CENTENARIO SHOPPING MALL - LOC 41","SHOP.Z1-2-6","5003353","Lectura Larga"],["CESHMA S.A.","30148559","CENTENARIO SHOPPING MALL","SHOP.Z1-2-6","51568486","Lectura Larga Invertida"],["FAST FOOD SUDAMERICANA SA","30287040","AV R ALFONSIN 3525 L PB 107D 05","SHOP.Z1-2-6","83559646","Lectura Larga Invertida"],["CESHMA S.A.","30278003","SHOPPING MALL LOC 32","SHOP.Z1-2-6","251038348","Landys E330"],["AMA S.R.L.","30153568","SHOPPING MALL LOCAL 114","SHOP.Z1-2-6","601030000","Ampy/Landys"],["TIROCK SRL","30302851","SHOPPING MALL L:103","SHOP.Z1-2-6","601030001","T1"],["GASTRONOMIA MODERNA S.R.L.","30161063","SHOPPING MALL LOC 115 P. ALTA","SHOP.Z1-2-6","601030010","Ampy/Landys"],["RESTO BAR & LOUNGE S.R.L.","30115508","SHOPPING MALL LOC 73","SHOP.Z1-2-6","611000164","Ampy/Landys"],["DEFRAG S.R.L.","30067462","CENTENARIO SHOPPING MALL LOC.77","SHOP.Z1-2-6","611000168","Ampy/Landys"],["CARSA S.A.","10801490","CENTENARIO SHOPPING MALL  L. 69 B","SHOP.Z3-4-5","2235493","Lectura Larga"],["KREMAR S.R.L.","10445449","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2290423","T1"],["RUIZ DIAZ CLAUDIO EDUARDO","30052459","AV. CENTENARIO 3525","SHOP.Z3-4-5","2290425","T1"],["FRANCO NORMA BEATRIZ","10445475","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2290433","T1"],["HATHORS S.A.S","30331992","CENTENARIO SHOPPING MALL L 65","SHOP.Z3-4-5","2290435","T1"],["KADIMA S.A.","10445517","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2298802","Elster A1052"],["TATETI S.R.L","10445622","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2298803","Elster A1052"],["GUMA S.R.L.","10270710","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2298805","Elster A1052"],["H. Y C. AMUCHASTEGUI S.H.","10445525","AV. CENTENARIO 3535","SHOP.Z3-4-5","2298806","Elster A1052"],["AMELIA DE LOS SANTOS","30229845","SHOPPING MALL LOC 67","SHOP.Z3-4-5","2298809","Elster A1052"],["BISORDI  KREMAR S.R.L.","30062711","CENTENARIO SHOPPING MALL L: 87","SHOP.Z3-4-5","2321072","Elster A1052"],["GRIGOLATTO VALERIA LUCIANA","30023984","CENTENARIO SHOPPING MALL LOC.Nº15","SHOP.Z3-4-5","2321073","Elster A1052"],["GRIGOLATTO VALERIA LUCIANA","30253652","SHOPPING MALL LOC 08","SHOP.Z3-4-5","2321075","Elster A1052"],["ANERS S.R.L","10445443","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2321077","Elster A1052"],["ANERS S.R.L","10445444","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2321078","Elster A1052"],["VALENTINA S.R.L.","30073989","CENTENARIO SHOPPING MAL  L:58","SHOP.Z3-4-5","2321080","Elster A1052"],["NORESTE COFFEE STORE","10445447","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2321081","Elster A1052"],["KREMAR S.R.L.","10445448","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2321082","Elster A1052"],["BANCO DE CORRIENTES S.A.","10270597","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2321083","Elster A1052"],["RISTRETTO S.R.L.","30115472","SHOPPING MALL LOC 10","SHOP.Z3-4-5","2321084","Elster A1052"],["RUIZ DIAZ CLAUDIO EDUDARDO","10270684","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2321085","Elster A1052"],["OBREGON MARTA GRACIELA","10270662","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","2794404","T1"],["JUSKOW ROBERTO CARLOS","30314476","SHOPPING MALL LOCAL 92B","SHOP.Z3-4-5","2958873","T1"],["URBANA S.R.L.","30098324","SHOPPING MALL LOC B 100","SHOP.Z3-4-5","2959250","Elster A1052"],["LISCHINSKY PABLO","30186390","AV. CENTENARIO LOC 95","SHOP.Z3-4-5","2959802","T1"],["DIKTER S.A.","30226110","SHOPPING MALL LOC 98","SHOP.Z3-4-5","2959810","Elster A1052"],["DIKTER S.A.","30226105","SHOPPING MALL LOC 7","SHOP.Z3-4-5","2960057","T1"],["TIENDA GUARANI S.R.L.","30114441","SHOPPING MALL LOC 97 B","SHOP.Z3-4-5","2960398","T1"],["IVFE S.A.S","60270670","SHOPPING MAL LOC S 07","SHOP.Z3-4-5","2960436","T1"],["MEUCCI FABIANA ANTONELLA","30117261","SHOPPING MALL LOC 91","SHOP.Z3-4-5","3531029","T1"],["AMA S.R.L.","30138825","SHOPPING MALL LOCAL 29","SHOP.Z3-4-5","3920810","T1"],["SIMMONS DE ARGE S.A.I.C.","10801556","CENTENARIO SHOPPING MALL - L 22/22-","SHOP.Z3-4-5","4003152","Lectura Larga"],["EVANA GARAVANO Y CONSTANZA FARIZANO SH","30165537","SHOPPING MALL LOCAL 27","SHOP.Z3-4-5","4126294","T1"],["GRIGOLATTO VALERIA LUCIANA","30271799","SHOPPING MALL LOCAL 26","SHOP.Z3-4-5","4126299","T1"],["ALBA CECILIA INES","30090245","AV. CENTENARIO (LOC 53-54) 3525","SHOP.Z3-4-5","4233668","T1"],["FEDERICA S.A.","30214390","SHOPPING MALL LOC 55","SHOP.Z3-4-5","4378185","T1"],["SILVERO MARÍA ROSANA","30305184","CENTENARIO SHOPPING B 16","SHOP.Z3-4-5","4378191","T1"],["MEZA SILVIA LUCIA R.","30061150","AV. CENTENARIO 3525 L:B-88","SHOP.Z3-4-5","4712774","T1"],["VINOKUROV RAUL MAURICIO","30202611","SHOPPING MALL LOC 20","SHOP.Z3-4-5","4712898","T1"],["FEDERICA S.A.","30217363","SHOPPING MALL LOC 99","SHOP.Z3-4-5","4918018","T1"],["ARAMA S.R.L.","30221342","SHOPPING MALL LOC 14","SHOP.Z3-4-5","4920796","T1"],["KADIMA S.A.","10801522","CENTENARIO SHOPPING MALL L 17 y 18 #N/A","SHOP.Z3-4-5","5003341","Lectura Larga"],["CESHMA S.A.","60055569","CENTENARIO SHOPPING MALL","SHOP.Z3-4-5","51568496","Lectura Larga Invertida"],["S.R.L FYG","30300532","AV. PTE. RAUL ALFONSÍN - L:B-25 3525","SHOP.Z3-4-5","88889976","MT174"],["ERCOLANI MARCELO FEDERICO","30227920","SHOPPING MALL LOC 68","SHOP.Z3-4-5","88889991","MT174"],["LISCHINSKY PABLO","30164155","AV. CENTENARIO LOC 23","SHOP.Z3-4-5","88889993","MT174"],["E T 2 S.R.L.","30130148","SHOPPING MALL LOC 89","SHOP.Z3-4-5","89858112","MT174"],["ERCOLANI MARCELO FEDERICO","30116023","SHOPPING MALL LOC 96-B","SHOP.Z3-4-5","89858113","MT174"],["I.S. S.R.L.","30130146","SHOPPING MALL LOC 90","SHOP.Z3-4-5","89858114","MT174"],["ERCOLANI MARCELO FEDERICO","30153183","AV. PTE. RAUL ALFONSIN 3525 L:B-93","SHOP.Z3-4-5","89858115","MT174"],["VALERIA GRIGOLATTO","30306197","CENTENARIO SHOPPING MALL LOC 66-B","SHOP.Z3-4-5","90632741","MT174"],["REICHEL LILIANA BEATRIZ","60292287","CENTENARIO SHOPPING MALL L B 19","SHOP.Z3-4-5","96035268","MT174"],["NORTH MOTORS S.A.","30205278","SHOPPING MALL LOC 85","SHOP.Z3-4-5","251005648","Landys E330"],["ROSES EUGENIA ELIZABET","30063019","CENTENARIO SHOPPING MALL L 94","SHOP.Z3-4-5","611000095","Ampy/Landys"],["GRUPO ILHSA S.A.","10801557","CENTENARIO SHOPPING MALL - L 10 Y 1","SHOP.Z3-4-5","611000104","Ampy/Landys"],["GUMA S.R.L.","10801727","CENTENARIO SHOPPING MALL L 1","SHOP.Z3-4-5","611000105","Ampy/Landys"],["VANGUARDIA SOC. DE RESO. LTDA.","30023112","CENTENARIO SHOPPING MALL LOC.9","SHOP.Z3-4-5","611000106","Ampy/Landys"],["KADIMA S.A.","30060721","CENTENARIO SHOPPING MALL L: 86","SHOP.Z3-4-5","612002008","Ampy/Landys"],["FACOR S.R.L.","10440829","AV. GREGORIO POMAR 840","SHOP.Z3-4-5","612005646","Ampy/Landys"],["LISADORA S.R.L.","10801581","CENTENARIO SHOPPING MALL - L: 57","SHOP.Z3-4-5","612005647","Ampy/Landys"],["TRESMARTIN S.R.L.","30172704","SHOPPING MALL LOC 111","SHOP.Z3-4-5","24236827","IT410"],["ARCOS DORADOS ARGENTINA S.A.","10801560","CENTENARIO SHOPPING MALL - L: 82","SHOP.Z3-4-5","24237194","IT330"],["CESHMA S.A.","10801638","CENTENARIO SHOPPING MALL","SHOP.Z3-4-5","24332286","IT330"],["MTPD B° VIRGEN DE LOS DOLORES SET N° 60","30159148","GUTNISKY  AV. GARAY","SUR 1","59037","T1"],["MTPD Bº PATONO SET Nº 238","10270593","BO. PATONO","SUR 1","81473","T1"],["MTPD B° QUILMES  - SET N° 855 –","30162552","IBERA B° INVICO","SUR 1","83855","T1"],["MTPD B° GALVAN III  SET N° 432","30162076","LA PAMPA ESQ. ALBERDI","SUR 1","92193","T1"],["MTPD - SET N°1088","30162128","HERNANDARIAS Y J.M. ROSAS","SUR 1","116723","T1"],["MTPD Bº GALVAN SET Nº 24","30159167","ELIAS ABAD ESQ. PJE ATENAS","SUR 1","116737","T1"],["MTPD Bº PATONO SET Nº 324","10270556","BO. QUILMES","SUR 1","149773","T1"],["MTPD Bº GALVAN SET Nº 318","10270626","RIO DULCE 179","SUR 1","149774","T1"],["MTPD Bº 3 DE ABRIL SET Nº 183","10270594","JOSE  R. VIDAL","SUR 1","149780","T1"],["MTPD Bº GALVAN SET Nº 543","10270585","BO. GALVAN","SUR 1","174969","T1"],["MTPD Bº GALVAN SET Nº 542","10270584","BO. GALVAN","SUR 1","174977","T1"],["MTPD Bº Patono SET Nº 326","30041065","Potosí y Gato y Mancha","SUR 1","175916","T1"],["MTPD Bº Juan XXIII SET Nº 34","30041051","Av. J.R. Vidal y Gato y Mancha","SUR 1","175924","T1"],["MTPD Bº PATONO SET Nº 632","10270557","BO. QUILMES","SUR 1","175934","T1"],["MTPD Bº PIO X SET Nº 650","10270591","MENDOZA","SUR 1","175940","T1"],["MTPD Bº GALVAN SET Nº 179","10270624","BO. VIRGEN DE LOS DOLORES","SUR 1","175955","T1"],["CLUB HURACAN CTES.","10270513","AV. SARMIENTO 2201","SUR 1","175957","Lectura Larga"],["MTPD B° VILLA DE LOS DOLORES SET N° 317","30162074","RIO DULCE 143","SUR 1","175982","T1"],["MTPD Bº PIO X  SET Nº483","10270592","LA PAMPA 1200","SUR 1","880221","T1"],["MTPD Bº PIO X SET Nº 97","10270613","CHUBUT","SUR 1","1475960","T1"],["MTPD Bº PIO X SET Nº 309","10270623","BO. PIO X","SUR 1","1941676","T1"],["MTPD Bº V.DE LOS DOLORES SET Nº 481","10270653","Bº V.DE LOS DOLORES -SET Nº 481","SUR 1","1941693","T1"],["TELECOM ARGENTINA S.A.","30045341","VARGAS GOMEZ 1827","SUR 1","1941779","T1"],["SUPERMAX S.A.","60040497","AV. SARMIENTO 2355","SUR 1","2235492","Lectura Larga"],["TELECOM ARGENTINA S.A.","30045345","BLAS PARERA 1675","SUR 1","2298643","T1"],["ERSA URBANO S.A.","10801449","J.R. VIDAL 4100","SUR 1","3002291","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60077759","HEROES CIVILES 1965","SUR 1","3288426","Lectura Larga"],["DEL LITORAL DISTRIBUCIONES S.A","10800628","AV. TTE. IBAÑEZ 1156","SUR 1","3288439","Lectura Larga"],["LOPEZ HUGO HORACIO","60080721","LA PAMPA 871","SUR 1","3603127","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801045","NEUQUEN 1470","SUR 1","4003117","Lectura Larga"],["CERVECERIA Y MAL. QUILMES SAICAYG","60041083","AV. JUAN DE GARAY 340","SUR 1","4003195","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60291827","JUAN RAMON VIDAL 1902","SUR 1","4156941","Lectura Larga"],["BUIZA S.A. EN FORMACION","60083212","JOSE RAMON VIDAL 3802","SUR 1","4358182","Lectura Larga"],["INST. R. ROUBINEAU I-32","10801053","AV. SARMIENTO 1971","SUR 1","4697955","Lectura Larga"],["SHONKO S.A.","10423977","LAS HERAS 1051","SUR 1","5003320","Lectura Larga"],["PETROLERA DEL PARANA S.R.L.","60157179","PIO XII 2390","SUR 1","5003350","Lectura Larga"],["YANG ZHENWEN","10801262","AV. TTE. IBAÑEZ 854","SUR 1","5003365","Lectura Larga"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10800560","HEROES CIVILES 1965","SUR 1","24332351","SMART"],["SAGRADO CORAZON COLEGIO","10801261","REP. DEL LIBANO 340","SUR 1","51568491","Lectura Larga Invertida"],["DACUNDA HNOS. S.A.","10800022","AV. ALBERDI 2397","SUR 1","51568507","Lectura Larga Invertida"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","10800092","JUAN RAMON VIDAL 2050","SUR 1","83559615","Lectura Larga Invertida"],["CABRERA CATALINA","60033349","AV. JOSE R. VIDAL 1650","SUR 1","251038317","Landys E330"],["CENTRO EDUCATIVO TERAPEUTICO ALAS S.R.L.","60131319","AV. J. R. VIDAL 2159","SUR 1","601029980","Ampy/Landys"],["RADIO SUDAMERICANA","60015282","HERNAN CORTES 453","SUR 1","601029987","Ampy/Landys"],["CABRERA MARIA ANGELICA","10801549","GUTEMBERG 2068","SUR 1","611000052","Ampy/Landys"],["GINSA S.A.","10801542","AV. COLON 539","SUR 1","611000109","Ampy/Landys"],["TELEFONICA MOVILES ARG. S.A.","10212916","JOSE  R. VIDAL","SUR 1","611000115","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60098326","JUAN DE GARAY 850","SUR 1","611000131","Ampy/Landys"],["IAD SRL","60089584","ALBERDI 2099","SUR 1","611000221","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60097299","ALBERDI ESQ ALTO VERDE","SUR 1","611000309","Ampy/Landys"],["M.SALUD PUBLICA CTES.(TOTLIZADOR)","60019902","LAS HERAS 1050","SUR 1","612000071","Ampy/Landys"],["FARINOLI SERGIO ANDRES","60074573","GUASTAVINO 1964","SUR 1","612000124","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60094673","GUASTAVINO 2097","SUR 1","612002015","Ampy/Landys"],["NORFAR S.R.L.","60090010","GUTEMBERG 2461","SUR 1","612005643","Ampy/Landys"],["GRUPO GOLD S.A.","60091537","AV. SARMIENTO 2500","SUR 1","612005649","Ampy/Landys"],["XIE HUILING","60150327","PIO XII 1985","SUR 1","612005736","Ampy/Landys"],["QUELAC S.A.S.","60169710","AV. TENIENTE IBAÑEZ 1195","SUR 1","251005629","Landys E330"],["TELEFONICA MOVILES DE ARGENTINA S.A.","30203803","NECOCHEA 1456","SUR 1","4409343","T1"],["JEMAN S.R.L.","60194124","GUTEMBERG 2251","SUR 1","611000039","Ampy/Landys"],["LA ALEMANA S.R.L.","60206835","AV. TTE. IBAÑEZ 1545","SUR 1","251005637","Landys E330"],["HABERKORN MARTIN S.R.L.","60216944","LA PAMPA 1690","SUR 1","251029529","Landys E330"],["AMX ARGENTINA S.A.","30275498","BLAS PARERA 1635","SUR 1","4322287","T1"],["JEMAN S.R.L.","60276817","AV. SARMIENTO 2501","SUR 1","2518758","Prosumidor"],["CLINICA SAGRADO CORAZON SRL","60277080","GUTEMBERG 2186","SUR 1","5003346","Lectura Larga"],["ZACARIAS FERRETTI EDGARDO DANIEL","30336713","PIO XII 1888","SUR 1","612005683","Ampy/Landys"],["DEPOT EXPRESS SRL","30319228","AV TTE. IBAÑEZ 1302","SUR 1","612005737","Ampy/Landys"],["XUE WENQING","30319172","AV CUARTA CENTENARIO 3040","SUR 1","251025195","Landys E330"],["MTPD B° LA CHOLA SET N° 993","30115503","LA ANTENA Y ARGENTINA (LA CHOLA)","SUR 2","83131","T1"],["MTPD Bº RIO PARANA SET Nº 781","10270550","BO. RIO PARANA","SUR 2","149754","T1"],["MTPD Bº Ntra Sra de Guadalupe SET Nº 488","30041133","Los Andes y Los Comechingones","SUR 2","174986","T1"],["MTPD Bº RIO PARANA SET Nº 270","10270558","BO. RIO PARANA","SUR 2","175941","T1"],["MTPD B° LA TOSQUERA SET Nº 967","30092037","TOSQUERA  SET Nº 967","SUR 2","175961","T1"],["MTPD B° LA TOSQUERA SET N° 956","30092031","TOSQUERA FTE COMISARIA SET 956","SUR 2","175965","T1"],["MTPD B° LA TOSQUERA SET Nº 966","30092033","TOSQUERA  SET Nº 966","SUR 2","175971","T1"],["DEPOT EXPRESS S.R.L.","60148282","AV. PAYSANDU 3701","SUR 2","906984","Lectura Larga"],["MTPD Bº JUAN XXIII SET Nº 638","10270614","BO. JUAN XXIII","SUR 2","1941698","T1"],["MTPD Bº JUAN XXIII SET Nº 479","10270595","BO. JUAN XXIII","SUR 2","1941734","T1"],["TELECOM ARGENTINA S.A.","30054097","PEDRO CENTENO ESQ RIO LIMAY","SUR 2","2298798","T1"],["INSTITUTO DE CULTURA CTES.ANF.COCOMAROLA","60007199","SARMIENTO Y PATAGONIA","SUR 2","2518759","Lectura Larga"],["SUPERMAX  S.A.","10800909","CIUDAD DE AREQUIPA 3370","SUR 2","3247590","Lectura Larga"],["AMX ARGENTINA S.A.","10800718","AV. ALTA GRACIA ent.Paisand· y Igar","SUR 2","3288433","Lectura Larga"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10800714","PATAGONIA 1801","SUR 2","3288471","Lectura Larga"],["SUPERMAX S.A.","60158908","AV. PAYSANDU 4138","SUR 2","4323866","Lectura Larga"],["TELEFONICA MOVILES DE ARGENTINA S.A.","30205081","CALLE 212 Y JUAN DE DIOS GOMEZ","SUR 2","4409934","T1"],["M.EDUCACION CTES.D.G.E.SEC.COLEG.LELOIR","10151451","AV. LA PAZ","SUR 2","4410077","Lectura Larga"],["SUPERMAX  S.A.","60026132","TARAGUI Nº1585","SUR 2","4695845","Lectura Larga"],["AMX ARG. S.A.","30014100","IBERA 1670","SUR 2","4932371","T1"],["M.EDUCACION CTES.C.G.E.(TOTALIZADOR)","10418395","SARMIENTO Y PATAGONIA","SUR 2","5003305","Lectura Larga"],["LIN YANBIN","60237085","IBERA 1284","SUR 2","5003356","Lectura Larga"],["TELECOM ARG. S.A.","10801001","RAFAELA  Y J. HERNANDEZ","SUR 2","83559591","Lectura Larga Invertida"],["TOTAL PHARMA S.R.L.","60161605","CRUZ DEL SUR 2198","SUR 2","251005610","Landys E330"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","10801292","CIUDAD DE AREQUIPA 3800","SUR 2","251046932","Landys E330"],["S.R.L. DOÑA LIDIA","60154614","MBURUCUYA 2504","SUR 2","601030033","Ampy/Landys"],["TELECOM ARGENTINA S.A.","60135820","B* ALTA GRACIA MZ 39 B CS 19","SUR 2","611000257","Ampy/Landys"],["MILENIA ENERGIA S.A.","60148390","IBERA ESQ PAYSANDU","SUR 2","611000319","Ampy/Landys"],["ARRIOLA NELSON ORLANDO","60125298","JOSE HERNANDEZ 1682","SUR 2","612000076","Ampy/Landys"],["YANG ZHENMING","10801563","AV. PAYSANDU N¦ 4123","SUR 2","612005724","Ampy/Landys"],["ZHANG QINQIN","30347254","COSQUIN 1750","SUR 2","612002010","Ampy/Landys"],["CERV.Y MALTERIA QUILMES SAICAG","30304778","AV. JUAN DE GARAY 340","SUR 1","100003","GUMA QUILMES"],["CERVECERIA Y MALTERIA QUILMES","10801573","AV. JUAN DE GARAY 340","SUR 1","100004","GUMA QUILMES"],["PLAYGROUND SRL","30332803","MORENO 52","UNIPLAZA","515184","Prosumidor"],["CESHMA S.A","30331034","MORENO 52","UNIPLAZA","3288435","Lectura Larga"],["S.A. FARBEN L 16","30338671","MORENO 58","UNIPLAZA","24236921","IT410"],["JAF S.R.L","30331181","MORENO 52","UNIPLAZA","24236993","SMART"],["JLGN S.R.L","30331295","MORENO 52","UNIPLAZA","24237005","SMART"],["FABRICA DE VACAS SOCIEDAD ANONIMA UNIPE","30330858","MARIANO MORENO 52","UNIPLAZA","24332084","SMART"],["CESHMA S.A","30331031","MORENO 52","UNIPLAZA","24332205","SMART"],["LA ALEMANA S.R.L","30330756","MORENO 52","UNIPLAZA","51568500","Lectura Larga Invertida"],["TAZA S.A.","30330776","MORENO 52","UNIPLAZA","96034754","MT174"],["MAJUFAR S.R.L","30331023","MORENO 52","UNIPLAZA","96034760","MT174"],["ADA S.A","30330712","MORENO 52","UNIPLAZA","96034844","MT174"],["KADIMA S.A.","30331151","MORENO 52","UNIPLAZA","96034845","MT174"],["KADIMA S.A.","30331150","MORENO 52","UNIPLAZA","96034846","MT174"],["FSE SRL","30331147","MORENO 52","UNIPLAZA","96034848","MT174"],["DINNER ARGENTINA","30332477","MORENO 52","UNIPLAZA","96035057","MT174"],["RESTO BAR & LOUNGE S.R.L.","30333280","MORENO 52","UNIPLAZA","96035066","MT174"],["VALERIA LUCIANA GRIGOLATTO","30336001","MARIANO MORENO 52","UNIPLAZA","612005738","Ampy/Landys"],["CARLOS ROBERTO SANCHEZ","10410352","GDOR. VIRASORO 2349","ARMENIA","24331738","IT 410"],["RICKOFF S.R.L / PARAJE LOMAS ALTA RP N°5 /","30347950","201, PARAJE LOMAS ALTA","RUTA NORTE","24331800","IT 410"],["NEXO OBRAS Y SERVICIOS SA","30348121","AGUSTÍN GONZALEZ 1067","CENTRO JUNIN","24331836","IT 410"],["FEDERACION ARGENTINA TRABAJADORES LUZ Y FUERZA","30349035","URUGUAY Y MORENO","CENTRO 6","24332276","IT330"],["USO PROPIO DPEC","30349346","TUCUMAN ESQ QUINTANA","CENTRO 1","1324972","Elster A1052"],["M.EDUCACION CTES.D.G.E.SEC.(TOTALIZADOR)","11801344","TUCUMAN ESQ QUINTANA","CENTRO 1","24332190","IT330"]];
+</script>
+<script>
+(function () {
+  "use strict";
+
+  /* ============ IndexedDB ============ */
+  var DB_NAME = "dpec_gu_t1_db";
+  var DB_VERSION = 1;
+  var STORE = "registros";
+  var db = null;
+
+  function openDB(cb) {
+    var req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function (e) {
+      var d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        d.createObjectStore(STORE, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = function (e) { db = e.target.result; cb(); };
+    req.onerror = function (e) { alert("Error abriendo la base local: " + e.target.error); };
+  }
+
+  function dbGetAll(cb) {
+    var tx = db.transaction(STORE, "readonly");
+    var store = tx.objectStore(STORE);
+    var req = store.getAll();
+    req.onsuccess = function () { cb(req.result || []); };
+  }
+
+  function dbPut(record, cb) {
+    var tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).put(record);
+    tx.oncomplete = function () { if (cb) cb(); };
+  }
+
+  function dbDelete(id, cb) {
+    var tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = function () { if (cb) cb(); };
+  }
+
+  /* ============ State ============ */
+  var records = {};      // id -> record
+  var zonas = [];         // list of zona names sorted
+  var zonaUsers = {};     // zona -> array of {usuario, ic, domicilio, zona, id}
+  var currentZona = null;
+  var currentUser = null;
+  var currentFilter = "todos";
+  var currentEstado = "";
+  var currentFotoData = null;
+  var currentGps = null; // { lat, lon, acc }
+  var gpsWatching = false;
+  var allUsersFlat = []; // flat list of every usuario, for global meter search
+
+  var ESTADOS = ["Correcto", "Roto / Da\u00f1ado", "Inaccesible", "Retirado", "Sin acceso al domicilio", "Otro"];
+
+  function makeId(u) {
+    return u.zona + "||" + u.ic + "||" + u.idx;
+  }
+
+  function buildIndex() {
+    var seen = {};
+    for (var i = 0; i < GU_DATA.length; i++) {
+      var r = GU_DATA[i];
+      var usuario = r[0], ic = r[1], domicilio = r[2], zona = r[3], medEsperado = r[4], tipo = r[5];
+      var key = zona + "|" + ic;
+      seen[key] = (seen[key] || 0) + 1;
+      var idx = seen[key];
+      var obj = { usuario: usuario, ic: ic, domicilio: domicilio, zona: zona, medEsperado: medEsperado, tipo: tipo, idx: idx };
+      obj.id = makeId(obj);
+      if (!zonaUsers[zona]) { zonaUsers[zona] = []; zonas.push(zona); }
+      zonaUsers[zona].push(obj);
+    }
+    zonas.sort();
+    for (var z in zonaUsers) {
+      zonaUsers[z].sort(function (a, b) { return a.usuario.localeCompare(b.usuario); });
+      for (var k = 0; k < zonaUsers[z].length; k++) allUsersFlat.push(zonaUsers[z][k]);
+    }
+  }
+
+  /* ============ Screens ============ */
+  function showScreen(name) {
+    var scr = document.querySelectorAll(".screen");
+    for (var i = 0; i < scr.length; i++) scr[i].classList.remove("active");
+    document.getElementById(name).classList.add("active");
+    document.getElementById("bottombarHome").style.display = (name === "screenHome") ? "flex" : "none";
+    document.getElementById("btnBack").style.display = (name === "screenHome") ? "none" : "block";
+    document.getElementById("progressWrap").style.display = (name === "screenZona") ? "block" : "none";
+  }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+
+  /* ============ Home / Zonas ============ */
+  function zonaStats(zona) {
+    var list = zonaUsers[zona] || [];
+    var done = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (records[list[i].id]) done++;
+    }
+    return { total: list.length, done: done };
+  }
+
+  function renderMedSearch(query) {
+    var box = document.getElementById("medSearchResults");
+    var zonaBox = document.getElementById("zonaSearchBox");
+    var grid = document.getElementById("zonaGrid");
+    var q = (query || "").trim();
+    if (q.length < 2) {
+      box.innerHTML = "";
+      zonaBox.style.display = "";
+      grid.style.display = "";
+      return;
+    }
+    zonaBox.style.display = "none";
+    grid.style.display = "none";
+    var qUp = q.toUpperCase();
+    var matches = [];
+    for (var i = 0; i < allUsersFlat.length; i++) {
+      var u = allUsersFlat[i];
+      var rec = records[u.id];
+      var medEsperado = u.medEsperado || "";
+      var medCargado = rec ? (rec.medidor || "") : "";
+      if (medEsperado.toUpperCase().indexOf(qUp) !== -1 || medCargado.toUpperCase().indexOf(qUp) !== -1) {
+        matches.push(u);
+      }
+      if (matches.length >= 40) break;
+    }
+    if (matches.length === 0) {
+      box.innerHTML = '<div class="empty-msg">Sin coincidencias de medidor.</div>';
+      return;
+    }
+    var html = "";
+    for (var j = 0; j < matches.length; j++) {
+      var m = matches[j];
+      var mrec = records[m.id];
+      var isDone = !!mrec;
+      var medShown = isDone ? mrec.medidor : m.medEsperado;
+      html +=
+        '<div class="u-item" data-medidx="' + j + '">' +
+          '<div class="u-status-dot ' + (isDone ? "done" : "pending") + '"></div>' +
+          '<div class="u-body">' +
+            '<div class="u-name">Med. ' + esc(medShown || "-") + ' \u00b7 ' + esc(m.usuario) + '</div>' +
+            '<div class="u-meta">' + esc(m.zona) + ' \u00b7 IC ' + esc(m.ic) + '</div>' +
+          '</div>' +
+          '<div class="u-arrow">&#8250;</div>' +
+        '</div>';
+    }
+    box.innerHTML = html;
+    var items = box.querySelectorAll(".u-item");
+    for (var k = 0; k < items.length; k++) {
+      (function (mm) {
+        items[k].addEventListener("click", function () {
+          openZona(mm.zona);
+          openDetalle(mm);
+        });
+      })(matches[k]);
+    }
+  }
+
+  function renderZonaGrid(filterText) {    var grid = document.getElementById("zonaGrid");
+    grid.innerHTML = "";
+    var ft = (filterText || "").toUpperCase();
+    for (var i = 0; i < zonas.length; i++) {
+      var z = zonas[i];
+      if (ft && z.toUpperCase().indexOf(ft) === -1) continue;
+      var st = zonaStats(z);
+      var pct = st.total ? Math.round((st.done / st.total) * 100) : 0;
+      var card = document.createElement("div");
+      card.className = "zona-card";
+      card.innerHTML =
+        '<div class="zona-name">' + esc(z) + '</div>' +
+        '<div class="zona-meta">' + st.done + ' / ' + st.total + ' cargados</div>' +
+        '<div class="zona-bar-track"><div class="zona-bar-fill' + (pct === 100 ? ' done' : '') + '" style="width:' + pct + '%;"></div></div>';
+      (function (zz) {
+        card.addEventListener("click", function () { openZona(zz); });
+      })(z);
+      grid.appendChild(card);
+    }
+  }
+
+  function updateHomeProgressHeader() {
+    document.getElementById("hdrTitle").textContent = "Relevamiento GU T1";
+    document.getElementById("hdrSub").textContent = "DPEC \u00b7 Grandes Usuarios \u00b7 " + zonas.length + " zonas";
+  }
+
+  /* ============ Zona / Usuarios ============ */
+  function openZona(zona) {
+    currentZona = zona;
+    currentFilter = "todos";
+    document.getElementById("userSearch").value = "";
+    var chips = document.querySelectorAll(".filter-chip");
+    for (var i = 0; i < chips.length; i++) chips[i].classList.remove("active");
+    document.querySelector('.filter-chip[data-f="todos"]').classList.add("active");
+    document.getElementById("hdrTitle").textContent = zona;
+    document.getElementById("hdrSub").textContent = "DPEC \u00b7 Grandes Usuarios";
+    renderProgress();
+    renderUserList();
+    showScreen("screenZona");
+  }
+
+  function renderProgress() {
+    var st = zonaStats(currentZona);
+    var pct = st.total ? Math.round((st.done / st.total) * 100) : 0;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressTxt").textContent = st.done + " / " + st.total + " cargados";
+    document.getElementById("progressPct").textContent = pct + "%";
+  }
+
+  function renderUserList() {
+    var listEl = document.getElementById("userList");
+    listEl.innerHTML = "";
+    var q = (document.getElementById("userSearch").value || "").toUpperCase();
+    var list = zonaUsers[currentZona] || [];
+    var shown = 0;
+    for (var i = 0; i < list.length; i++) {
+      var u = list[i];
+      var rec = records[u.id];
+      var isDone = !!rec;
+      if (currentFilter === "pendiente" && isDone) continue;
+      if (currentFilter === "cargado" && !isDone) continue;
+      if (q) {
+        var hay = (u.usuario + " " + u.ic + " " + u.domicilio).toUpperCase();
+        if (hay.indexOf(q) === -1) continue;
+      }
+      shown++;
+      var item = document.createElement("div");
+      item.className = "u-item";
+      var metaExtra = isDone ? (" \u00b7 Med. " + (rec.medidor || "-") + " \u00b7 Lect. " + (rec.lectura || "-") + " \u00b7 " + (rec.estado || "-")) : (u.medEsperado ? (" \u00b7 Med. " + u.medEsperado) : "");
+      item.innerHTML =
+        '<div class="u-status-dot ' + (isDone ? "done" : "pending") + '"></div>' +
+        '<div class="u-body">' +
+          '<div class="u-name">' + esc(u.usuario) + '</div>' +
+          '<div class="u-meta">IC ' + esc(u.ic) + ' \u00b7 ' + esc(u.domicilio) + esc(metaExtra) + '</div>' +
+        '</div>' +
+        '<div class="u-arrow">&#8250;</div>';
+      (function (uu) {
+        item.addEventListener("click", function () { openDetalle(uu); });
+      })(u);
+      listEl.appendChild(item);
+    }
+    if (shown === 0) {
+      listEl.innerHTML = '<div class="empty-msg">No hay usuarios que coincidan.</div>';
+    }
+  }
+
+  /* ============ Detalle ============ */
+  function openDetalle(u) {
+    currentUser = u;
+    var rec = records[u.id];
+    document.getElementById("dUsuario").textContent = u.usuario;
+    document.getElementById("dIC").textContent = u.ic;
+    document.getElementById("dDomicilio").textContent = u.domicilio;
+    document.getElementById("dZona").textContent = u.zona + (u.tipo ? " \u00b7 " + u.tipo : "");
+    document.getElementById("fMedidor").value = rec ? (rec.medidor || "") : (u.medEsperado || "");
+    document.getElementById("fLectura").value = rec ? (rec.lectura || "") : "";
+    currentEstado = rec ? (rec.estado || "") : "";
+    currentFotoData = rec ? (rec.foto || null) : null;
+    currentGps = (rec && rec.lat != null) ? { lat: rec.lat, lon: rec.lon, acc: rec.gpsAcc } : null;
+    renderEstadoGrid();
+    renderPhotoArea();
+    captureGpsSilently();
+    showScreen("screenDetalle");
+  }
+
+  function renderEstadoGrid() {
+    var grid = document.getElementById("estadoGrid");
+    grid.innerHTML = "";
+    for (var i = 0; i < ESTADOS.length; i++) {
+      var e = ESTADOS[i];
+      var opt = document.createElement("div");
+      opt.className = "estado-opt" + (currentEstado === e ? " sel" : "");
+      opt.textContent = e;
+      (function (ee) {
+        opt.addEventListener("click", function () {
+          currentEstado = ee;
+          renderEstadoGrid();
+        });
+      })(e);
+      grid.appendChild(opt);
+    }
+  }
+
+  function renderPhotoArea() {
+    var area = document.getElementById("photoArea");
+    if (currentFotoData) {
+      area.innerHTML =
+        '<img class="photo-preview" src="' + currentFotoData + '">' +
+        '<div class="photo-btns">' +
+          '<button class="btn-mini" id="btnRetomar">Retomar foto</button>' +
+          '<button class="btn-mini" id="btnQuitarFoto">Quitar foto</button>' +
+        '</div>';
+      document.getElementById("btnRetomar").addEventListener("click", triggerPhoto);
+      document.getElementById("btnQuitarFoto").addEventListener("click", function () {
+        currentFotoData = null;
+        renderPhotoArea();
+      });
+    } else {
+      area.innerHTML = '<div class="photo-box" id="photoBoxTap">&#128247; Tocar para sacar foto del medidor</div>';
+      document.getElementById("photoBoxTap").addEventListener("click", triggerPhoto);
+    }
+  }
+
+  function triggerPhoto() {
+    document.getElementById("photoInput").click();
+  }
+
+  function captureGpsSilently() {
+    if (!navigator.geolocation || gpsWatching) return;
+    gpsWatching = true;
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        gpsWatching = false;
+        currentGps = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          acc: pos.coords.accuracy
+        };
+      },
+      function (err) {
+        gpsWatching = false;
+        /* silencioso: si falla, se guarda el registro sin punto GPS */
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    );
+  }
+
+  function handlePhotoFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        var maxW = 1000;
+        var scale = Math.min(1, maxW / img.width);
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        currentFotoData = canvas.toDataURL("image/jpeg", 0.72);
+        renderPhotoArea();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function guardarRegistro() {
+    if (!currentUser) return;
+    var medidor = document.getElementById("fMedidor").value.replace(/\s+/g, "");
+    var lectura = document.getElementById("fLectura").value.replace(/\s+/g, "");
+    if (!medidor) {
+      alert("Falta el n\u00famero de medidor.");
+      return;
+    }
+    if (!lectura) {
+      alert("Falta la lectura.");
+      return;
+    }
+    if (!currentEstado) {
+      alert("Eleg\u00ed el estado del medidor.");
+      return;
+    }
+    var rec = {
+      id: currentUser.id,
+      zona: currentUser.zona,
+      ic: currentUser.ic,
+      usuario: currentUser.usuario,
+      domicilio: currentUser.domicilio,
+      tipo: currentUser.tipo || "",
+      medidor: medidor,
+      lectura: lectura,
+      estado: currentEstado,
+      lat: currentGps ? currentGps.lat : null,
+      lon: currentGps ? currentGps.lon : null,
+      gpsAcc: currentGps ? currentGps.acc : null,
+      foto: currentFotoData || "",
+      fecha: new Date().toISOString()
+    };
+    records[rec.id] = rec;
+    dbPut(rec, function () {
+      toast("Registro guardado");
+      renderProgress();
+      renderUserList();
+      renderZonaGrid(document.getElementById("zonaSearch").value);
+      showScreen("screenZona");
+    });
+  }
+
+  function borrarRegistro() {
+    if (!currentUser) return;
+    if (!records[currentUser.id]) { showScreen("screenZona"); return; }
+    if (!confirm("\u00bfBorrar el registro cargado para este usuario?")) return;
+    delete records[currentUser.id];
+    dbDelete(currentUser.id, function () {
+      toast("Registro borrado");
+      renderProgress();
+      renderUserList();
+      renderZonaGrid(document.getElementById("zonaSearch").value);
+      showScreen("screenZona");
+    });
+  }
+
+  /* ============ Export CSV ============ */
+  function csvEscape(v) {
+    v = (v === undefined || v === null) ? "" : String(v);
+    if (v.indexOf(";") !== -1 || v.indexOf('"') !== -1 || v.indexOf("\n") !== -1) {
+      v = '"' + v.replace(/"/g, '""') + '"';
+    }
+    return v;
+  }
+
+  function exportCSV() {
+    var keys = Object.keys(records);
+    if (keys.length === 0) {
+      alert("Todav\u00eda no hay registros cargados.");
+      return;
+    }
+    var header = ["Zona", "IC", "Usuario", "Domicilio", "Tarifa", "Medidor", "Lectura", "Estado", "Latitud", "Longitud", "PrecisionGPS_m", "Fecha", "TieneFoto"];
+    var lines = [header.join(";")];
+    keys.sort(function (a, b) {
+      var ra = records[a], rb = records[b];
+      if (ra.zona !== rb.zona) return ra.zona.localeCompare(rb.zona);
+      return ra.usuario.localeCompare(rb.usuario);
+    });
+    for (var i = 0; i < keys.length; i++) {
+      var r = records[keys[i]];
+      var fecha = r.fecha ? new Date(r.fecha).toLocaleString("es-AR") : "";
+      var lat = (r.lat != null) ? r.lat.toFixed(6) : "";
+      var lon = (r.lon != null) ? r.lon.toFixed(6) : "";
+      var acc = (r.gpsAcc != null) ? Math.round(r.gpsAcc) : "";
+      var row = [r.zona, r.ic, r.usuario, r.domicilio, r.tipo || "", r.medidor, r.lectura, r.estado, lat, lon, acc, fecha, (r.foto ? "SI" : "NO")];
+      lines.push(row.map(csvEscape).join(";"));
+    }
+    var csv = "\uFEFF" + lines.join("\r\n");
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var d = new Date();
+    var stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes());
+    a.href = url;
+    a.download = "dpec_gu_t1_" + stamp + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+    toast("CSV exportado (" + keys.length + " registros)");
+
+    exportFotos();
+  }
+
+  function exportFotos() {
+    var keys = Object.keys(records);
+    var conFoto = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (records[keys[i]].foto) conFoto.push(records[keys[i]]);
+    }
+    if (conFoto.length === 0) return;
+    var idx = 0;
+    function next() {
+      if (idx >= conFoto.length) return;
+      var r = conFoto[idx];
+      var a = document.createElement("a");
+      a.href = r.foto;
+      var safeIc = String(r.ic).replace(/[^a-zA-Z0-9]/g, "");
+      var safeZona = String(r.zona).replace(/[^a-zA-Z0-9]/g, "_");
+      a.download = "foto_" + safeZona + "_" + safeIc + ".jpg";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      idx++;
+      setTimeout(next, 350);
+    }
+    if (confirm("Tambi\u00e9n hay " + conFoto.length + " foto(s) cargadas. \u00bfDescargarlas ahora?")) {
+      next();
+    }
+  }
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function esc(s) {
+    s = (s === undefined || s === null) ? "" : String(s);
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  /* ============ Resumen ============ */
+  function renderResumen() {
+    var body = document.getElementById("resumenBody");
+    var totalUsers = GU_DATA.length;
+    var totalDone = Object.keys(records).length;
+    var html = '<div class="modal-row"><b>Total general:</b> ' + totalDone + ' / ' + totalUsers + ' cargados</div>';
+    var sorted = zonas.slice().sort();
+    for (var i = 0; i < sorted.length; i++) {
+      var z = sorted[i];
+      var st = zonaStats(z);
+      html += '<div class="modal-row">' + esc(z) + ': ' + st.done + ' / ' + st.total + '</div>';
+    }
+    body.innerHTML = html;
+  }
+
+  /* ============ Init / Events ============ */
+  function init() {
+    buildIndex();
+    updateHomeProgressHeader();
+    openDB(function () {
+      dbGetAll(function (list) {
+        for (var i = 0; i < list.length; i++) records[list[i].id] = list[i];
+        renderZonaGrid("");
+      });
+    });
+
+    document.getElementById("zonaSearch").addEventListener("input", function () {
+      renderZonaGrid(this.value);
+    });
+
+    document.getElementById("medSearch").addEventListener("input", function () {
+      renderMedSearch(this.value);
+    });
+
+    document.getElementById("userSearch").addEventListener("input", renderUserList);
+
+    var chips = document.querySelectorAll(".filter-chip");
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener("click", function () {
+        for (var j = 0; j < chips.length; j++) chips[j].classList.remove("active");
+        this.classList.add("active");
+        currentFilter = this.getAttribute("data-f");
+        renderUserList();
+      });
+    }
+
+    document.getElementById("btnBack").addEventListener("click", function () {
+      var zonaScreen = document.getElementById("screenZona").classList.contains("active");
+      var detScreen = document.getElementById("screenDetalle").classList.contains("active");
+      if (detScreen) {
+        showScreen("screenZona");
+        renderProgress();
+        renderUserList();
+      } else if (zonaScreen) {
+        document.getElementById("hdrTitle").textContent = "Relevamiento GU T1";
+        document.getElementById("hdrSub").textContent = "DPEC \u00b7 Grandes Usuarios \u00b7 " + zonas.length + " zonas";
+        renderZonaGrid(document.getElementById("zonaSearch").value);
+        showScreen("screenHome");
+      }
+    });
+
+    document.getElementById("photoInput").addEventListener("change", function (e) {
+      if (e.target.files && e.target.files[0]) handlePhotoFile(e.target.files[0]);
+      this.value = "";
+    });
+
+    document.getElementById("btnGuardar").addEventListener("click", guardarRegistro);
+    document.getElementById("btnLimpiar").addEventListener("click", borrarRegistro);
+    document.getElementById("btnExportar").addEventListener("click", exportCSV);
+    document.getElementById("btnResumen").addEventListener("click", function () {
+      renderResumen();
+      document.getElementById("resumenModal").classList.add("show");
+    });
+    document.getElementById("btnCerrarResumen").addEventListener("click", function () {
+      document.getElementById("resumenModal").classList.remove("show");
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
